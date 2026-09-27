@@ -1,0 +1,6 @@
+{
+ "mode": "SCOPED",
+ "scope": [
+  "src/sboxpipe/aes_sbox\\.v"
+ ]
+}

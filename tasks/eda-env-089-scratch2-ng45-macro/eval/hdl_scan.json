@@ -1,0 +1,6 @@
+{
+ "mode": "SCOPED",
+ "scope": [
+  "src/scratch2/spram_256x32\\.v"
+ ]
+}

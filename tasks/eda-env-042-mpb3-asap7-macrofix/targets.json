@@ -1,0 +1,36 @@
+{
+  "budget_sec": 14400,
+  "eval_clk_ps": 850,
+  "gates": [
+    {
+      "metric": "wns",
+      "op": ">=",
+      "value": 0.0
+    },
+    {
+      "metric": "drc_violations",
+      "op": "<=",
+      "value": 0
+    },
+    {
+      "metric": "instance_count",
+      "op": ">=",
+      "value": 2061
+    },
+    {
+      "metric": "utilization",
+      "op": ">=",
+      "value": 0.4
+    },
+    {
+      "metric": "utilization",
+      "op": "<=",
+      "value": 0.6
+    }
+  ],
+  "reward": {
+    "form": "gate",
+    "scale": 1.0,
+    "units": "pass"
+  }
+}

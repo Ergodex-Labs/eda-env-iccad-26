@@ -1,0 +1,51 @@
+{
+  "budget_sec": 14400,
+  "eval_clk_ps": 1.0,
+  "gates": [
+    {
+      "metric": "wns",
+      "op": ">=",
+      "value": 0.0
+    },
+    {
+      "metric": "drc_violations",
+      "op": "<=",
+      "value": 0
+    },
+    {
+      "metric": "macro_count",
+      "op": ">=",
+      "value": 2
+    },
+    {
+      "metric": "macro_placed",
+      "op": ">=",
+      "value": 1
+    },
+    {
+      "metric": "macro_conn_signal",
+      "op": ">=",
+      "value": 1
+    },
+    {
+      "metric": "macro_conn_power",
+      "op": ">=",
+      "value": 1
+    },
+    {
+      "metric": "tb_pass",
+      "op": ">=",
+      "value": 1
+    },
+    {
+      "metric": "instance_count",
+      "op": ">=",
+      "value": 79
+    }
+  ],
+  "reward": {
+    "form": "gate",
+    "scale": 1.0,
+    "units": "pass"
+  }
+}

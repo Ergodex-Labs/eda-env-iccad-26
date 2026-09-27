@@ -1,0 +1,35 @@
+diff --git a/config.mk b/config.mk
+index b1daf31..00421a8 100644
+--- a/config.mk
++++ b/config.mk
+@@ -6,12 +6,28 @@ export DESIGN_NICKNAME        = aes
+ export VERILOG_FILES = $(sort $(wildcard $(DESIGN_HOME)/src/$(DESIGN_NICKNAME)/*.v))
+ export SDC_FILE      = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NICKNAME)/constraint.sdc
+ 
+-export CORE_UTILIZATION         = 55
++export CORE_UTILIZATION         = 30
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
+-export PLACE_DENSITY            = 0.55
++export PLACE_DENSITY            = 0.35
+ export TNS_END_PERCENT          = 100
+ 
++# --- Timing closure @ 368.2ps eval clock (SDC is fixed at 380ps) ---
++# Use the fast LVT library for the whole design. Leakage is negligible here
++# (~uW) versus the ~85mW dynamic total, so the speed is essentially free and
++# it removes the slow RVT cells from the critical path.
++export ASAP7_USE_VT             = LVT
++# Over-constrain the ABC synthesis delay target so it optimizes for a faster
++# clock than the (fixed) 380ps SDC.
++export ABC_CLOCK_PERIOD_IN_PS   = 340
++# Over-constrain P&R setup repair: target 380-28 = 352ps effective. 28 is the
++# empirical sweet spot; higher values over-optimize to the optimistic
++# global-route parasitic estimate and backfire after final extraction.
++export SETUP_SLACK_MARGIN       = 28
++# Power recovery DISABLED: it traded ~12ps of slack for ~0.3mW we do not need
++# (power is far within budget). Keep all the slack instead.
++export RECOVER_POWER            = 0
++
+ ifeq ($(FLOW_VARIANT),top)
+ 	export DESIGN_NAME = aes_cipher_top
+ 	export SYNTH_BLACKBOXES = aes_key_expand_128

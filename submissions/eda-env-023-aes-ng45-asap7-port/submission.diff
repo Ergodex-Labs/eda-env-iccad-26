@@ -1,0 +1,17 @@
+diff --git a/config.mk b/config.mk
+index 6e69821..72a2847 100644
+--- a/config.mk
++++ b/config.mk
+@@ -7,3 +7,12 @@ export VERILOG_FILES = $(sort $(wildcard $(DESIGN_HOME)/src/$(DESIGN_NICKNAME)/*
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+ export SYNTH_USE_SYN = 1
++
++# Floorplan: free floorplan scaled to the netlist (ported from the
++# Nangate45 source setup; 800 ps clock is relaxed so a moderate
++# utilization leaves plenty of routing room on ASAP7).
++export CORE_UTILIZATION       = 55
++export CORE_ASPECT_RATIO      = 1
++export CORE_MARGIN            = 2
++export PLACE_DENSITY_LB_ADDON = 0.20
++export TNS_END_PERCENT        = 100

@@ -1,0 +1,33 @@
+diff --git a/config.mk b/config.mk
+index 3d17672..99aedcc 100644
+--- a/config.mk
++++ b/config.mk
+@@ -13,3 +13,28 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+ export FLOORPLAN_DEF = $(WS)/floorplan.def
+ export TNS_END_PERCENT        = 100
++
++# --- Timing closure @ 560.5 ps evaluation clock ---
++# Multi-Vt: LVT primary (fast), RVT available for power recovery on
++# non-critical paths.
++export ASAP7_USE_VT           = LVT RVT
++
++# Map synthesis to the evaluation clock (560.5 ps), not the 400 ps SDC
++# nominal. ABC is delay-oriented; targeting the real clock avoids an
++# over-sized, power-hungry netlist.
++export ABC_CLOCK_PERIOD_IN_PS = 420
++
++# Repair timing to the evaluation clock with margin so post-route WNS >= 0.
++export SETUP_SLACK_MARGIN     = 150
++
++# More ABC optimization rounds for a higher-quality (faster) netlist.
++export ABC_SYN_ROUNDS         = 8
++
++# Timing-driven global placement.
++export GPL_TIMING_DRIVEN      = 1
++
++# Run pre-CTS setup/hold repair in the resize stage.
++export ENABLE_PLACE_REPAIR_TIMING = 1
++
++# Recover power on non-critical paths after timing is met.
++export RECOVER_POWER          = 100

@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use EDA-env, please cite this repository."
+title: "EDA-env: ICCAD 2026 tasks and evaluation artifacts"
+type: software
+authors:
+  - family-names: Ghose
+    given-names: Amur
+    affiliation: University of California San Diego
+  - family-names: Kahng
+    given-names: Andrew B.
+    affiliation: University of California San Diego
+  - family-names: Kothari
+    given-names: Yugesh
+    affiliation: Ergodex AI, Inc.
+  - family-names: Pandey
+    given-names: Umang
+    affiliation: Ergodex AI, Inc.
+  - family-names: Roy
+    given-names: Souktik
+    affiliation: Ergodex AI, Inc.
+repository-code: "https://github.com/Ergodex-Labs/eda-env-iccad-26"
+version: "v1.0-2026.09"
+license: BSD-3-Clause
+keywords:
+  - reinforcement learning
+  - agentic EDA
+  - RTL-to-GDS
+  - physical design
+  - sealed evaluation

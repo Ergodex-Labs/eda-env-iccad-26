@@ -1,0 +1,6 @@
+**
+!Dockerfile
+!evaluator/
+!evaluator/run_flow.sh
+!evaluator/patched/
+!evaluator/patched/**

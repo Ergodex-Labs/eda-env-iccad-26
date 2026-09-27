@@ -1,0 +1,100 @@
+diff --git a/config.mk b/config.mk
+index 97d8b17..395ace0 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,8 +1,8 @@
+-# keyvault2 @ nangate45 — F5 macro-integration given: a WORKING
+-# macro-less recipe. The bank is a behavioral flop array
+-# (src/keyvault2/spram_256x32.v), so the flow completes as given, but
+-# the memory spec of the task (two fakeram45_256x32 SRAM
+-# macros) is not met.
++# keyvault2 @ nangate45 — SRAM macro integration. Each storage bank
++# (src/keyvault2/spram_256x32.v) is now a wrapper around one
++# fakeram45_256x32 platform macro (two macro instances total). The macro
++# is a black box at synthesis (via ADDITIONAL_LIBS) and a hard block for
++# placement (via ADDITIONAL_LEFS).
+ export PLATFORM               = nangate45
+ 
+ export DESIGN_NICKNAME        = keyvault2
+@@ -11,12 +11,20 @@ export DESIGN_NAME            = keyvault2
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/keyvault2/*.v))
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-# Each behavioral bank is 8192 bits; the platform default cap (4096)
+-# would refuse to synthesize it. The macro-less recipe is a WORKING
+-# baseline by family contract, so the cap is raised here.
+-export SYNTH_MEMORY_MAX_BITS    = 32768
++# Physical views of the fakeram45_256x32 macro (see kit/README.md):
++# the liberty makes synthesis treat the macro as a black box, the LEF
++# gives placement its physical footprint.
++export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram45_256x32.lef
++export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/fakeram45_256x32.lib
+ 
+-export CORE_UTILIZATION         = 45
+-export CORE_ASPECT_RATIO        = 1
+-export CORE_MARGIN              = 2
+-export TNS_END_PERCENT          = 100
++# Floorplan: two 78.66 x 64.4 um macros need a core large enough to hold
++# them side by side with a placement halo plus room for the small FSM
++# logic and routing. Explicit die/core areas keep this deterministic.
++export DIE_AREA               = 0 0 220 150
++export CORE_AREA              = 10 10 210 140
++
++# Keep a halo around each macro so the placer/router have room to reach
++# the signal pins (metal3) and so PDN can drop vias on the power pins.
++export MACRO_PLACE_HALO       = 8 8
++
++export TNS_END_PERCENT        = 100
+diff --git a/src/keyvault2/spram_256x32.v b/src/keyvault2/spram_256x32.v
+index 4b59e2f..99f8a71 100644
+--- a/src/keyvault2/spram_256x32.v
++++ b/src/keyvault2/spram_256x32.v
+@@ -1,24 +1,37 @@
+-// spram_256x32: single-port synchronous SRAM bank, behavioral.
++// spram_256x32: single-port synchronous SRAM bank, implemented with the
++// platform SRAM macro fakeram45_256x32 (one macro instance per bank).
+ // Port contract (FROZEN — the module interface must not change):
+ //   cs=1, we=1 -> write wdata to addr; rdata holds.
+ //   cs=1, we=0 -> rdata <= mem[addr] (1-cycle read latency).
+ //   cs=0      -> rdata holds; memory unchanged.
++//
++// The macro's control pins are ACTIVE-LOW (ce_in, we_in); the bank's
++// contract is ACTIVE-HIGH (cs, we), so they are inverted here. The macro
++// writes through a bit write-mask (w_mask_in); the bank contract is a
++// full-word write, so the mask is tied to all-ones. With those mappings
++// the macro's behavior matches the bank contract cycle-for-cycle:
++//   cs=1, we=1 -> ce_in=0, we_in=0: masked write of wd_in (mask=all-1s
++//                 => full write); rd_out holds.
++//   cs=1, we=0 -> ce_in=0, we_in=1: rd_out <= mem[addr] (1-cycle latency).
++//   cs=0       -> ce_in=1: rd_out holds; memory unchanged.
+ module spram_256x32 (
+     input             clk,
+     input             cs,
+     input             we,
+     input      [7:0]  addr,
+     input      [31:0] wdata,
+-    output reg [31:0] rdata
++    output     [31:0] rdata
+ );
+-    reg [31:0] mem [0:255];
++    wire ce_n = ~cs;
++    wire we_n = ~we;
+ 
+-    always @(posedge clk) begin
+-        if (cs) begin
+-            if (we)
+-                mem[addr] <= wdata;
+-            else
+-                rdata <= mem[addr];
+-        end
+-    end
++    fakeram45_256x32 mem (
++        .clk       (clk),
++        .ce_in     (ce_n),
++        .we_in     (we_n),
++        .addr_in   (addr),
++        .wd_in     (wdata),
++        .w_mask_in (32'hFFFF_FFFF),
++        .rd_out    (rdata)
++    );
+ endmodule

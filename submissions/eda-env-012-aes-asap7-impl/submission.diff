@@ -1,0 +1,19 @@
+diff --git a/config.mk b/config.mk
+index 6e69821..8141934 100644
+--- a/config.mk
++++ b/config.mk
+@@ -7,3 +7,14 @@ export VERILOG_FILES = $(sort $(wildcard $(DESIGN_HOME)/src/$(DESIGN_NICKNAME)/*
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+ export SYNTH_USE_SYN = 1
++
++# Floorplan: 60% core utilization (task requirement)
++export CORE_UTILIZATION       = 60
++export CORE_ASPECT_RATIO      = 1
++export CORE_MARGIN            = 2
++
++# Placement density
++export PLACE_DENSITY          = 0.65
++
++# Timing effort
++export TNS_END_PERCENT        = 100

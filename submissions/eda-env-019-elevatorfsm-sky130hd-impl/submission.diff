@@ -1,0 +1,15 @@
+diff --git a/config.mk b/config.mk
+index ae20ce2..557a593 100644
+--- a/config.mk
++++ b/config.mk
+@@ -5,3 +5,10 @@ export DESIGN_NAME            = elevator_fsm
+ 
+ export VERILOG_FILES = $(WS)/src/elevator_fsm/elevator_fsm.v
+ export SDC_FILE      = $(WS)/constraint.sdc
++
++# Floorplan: 40% core utilization
++export CORE_UTILIZATION = 40
++
++# Keep default aspect ratio (1.0) and core margin from platform defaults.
++# Timing-friendly defaults for a small design at 10 ns on sky130hd.
++export TNS_END_PERCENT = 100

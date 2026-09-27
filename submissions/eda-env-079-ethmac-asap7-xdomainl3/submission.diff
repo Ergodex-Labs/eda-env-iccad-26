@@ -1,0 +1,69 @@
+diff --git a/constraint.sdc b/constraint.sdc
+index ede5448..46e47a4 100644
+--- a/constraint.sdc
++++ b/constraint.sdc
+@@ -1,5 +1,19 @@
++# ethmac @ ASAP7 — product timing intent.
++#
++# Three asynchronous clock domains:
++#   wb_clk_i      — Wishbone system clock, 1350 ps
++#   mtx_clk_pad_i — MII transmit clock,     405 ps
++#   mrx_clk_pad_i — MII receive clock,      405 ps
++# Each domain has a virtual IO clock (vclk_*) that drives the IO delays.
++# The RTL synchronizes every crossing (eth_fifo + control sync), so the
++# domains are declared asynchronous to keep the optimizer off the false
++# cross-domain paths.
++
++# ---------------------------------------------------------------------------
++# Wishbone system clock: 1350 ps
++# ---------------------------------------------------------------------------
+ set top_clk_name wb_clk_i
+-set clk_period 405
++set clk_period 1350
+ set clk_io_pct 0.2
+ set clk_port [get_ports $top_clk_name]
+ create_clock -name $top_clk_name -period $clk_period $clk_port
+@@ -11,9 +25,12 @@ set non_clock_inputs [all_inputs -no_clocks]
+ set_input_delay [expr $clk_period * $clk_io_pct] -clock $top_io_clk_name $non_clock_inputs
+ set_output_delay [expr $clk_period * $clk_io_pct] -clock $top_io_clk_name [all_outputs]
+ 
++# ---------------------------------------------------------------------------
++# MII transmit clock: 405 ps
++# ---------------------------------------------------------------------------
+ set tx_clk_name mtx_clk_pad_i
+ set tx_clk_port [get_ports $tx_clk_name]
+-set tx_clk_period 1350
++set tx_clk_period 405
+ create_clock -name $tx_clk_name -period $tx_clk_period $tx_clk_port
+ set tx_io_clk_name vclk_$tx_clk_name
+ create_clock -name $tx_io_clk_name -period $tx_clk_period
+@@ -23,9 +40,12 @@ set mtx_non_clock_inputs [lsearch -inline -all -not -exact [all_inputs] $tx_clk_
+ set_input_delay [expr $tx_clk_period * $clk_io_pct] -clock $tx_io_clk_name $mtx_non_clock_inputs
+ set_output_delay [expr $tx_clk_period * $clk_io_pct] -clock $tx_io_clk_name [all_outputs]
+ 
++# ---------------------------------------------------------------------------
++# MII receive clock: 405 ps
++# ---------------------------------------------------------------------------
+ set rx_clk_name mrx_clk_pad_i
+ set rx_clk_port [get_ports $rx_clk_name]
+-set rx_clk_period 1350
++set rx_clk_period 405
+ create_clock -name $rx_clk_name -period $rx_clk_period $rx_clk_port
+ set rx_io_clk_name vclk_$rx_clk_name
+ create_clock -name $rx_io_clk_name -period $rx_clk_period
+@@ -35,6 +55,14 @@ set mrx_non_clock_inputs [lsearch -inline -all -not -exact [all_inputs] $rx_clk_
+ set_input_delay [expr $rx_clk_period * $clk_io_pct] -clock $rx_io_clk_name $mrx_non_clock_inputs
+ set_output_delay [expr $rx_clk_period * $clk_io_pct] -clock $rx_io_clk_name [all_outputs]
+ 
++# ---------------------------------------------------------------------------
++# The three domains are asynchronous to each other.  Group each real clock
++# with its own virtual IO clock and cut all paths between the groups so the
++# timer/optimizer does not chase the (synchronized) clock-domain crossings.
++# ---------------------------------------------------------------------------
++set_clock_groups -name async_domains -asynchronous \
++  -group [concat [get_clocks $top_clk_name] [get_clocks $top_io_clk_name]] \
++  -group [concat [get_clocks $tx_clk_name] [get_clocks $tx_io_clk_name]] \
++  -group [concat [get_clocks $rx_clk_name] [get_clocks $rx_io_clk_name]]
+ 
+ set_max_fanout 10 [current_design]
+-# NOTE: constraints regenerated from the domain spreadsheet import.

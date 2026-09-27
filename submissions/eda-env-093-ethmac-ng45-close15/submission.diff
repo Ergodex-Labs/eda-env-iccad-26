@@ -1,0 +1,21 @@
+diff --git a/config.mk b/config.mk
+index f4b8d24..8a76d1d 100644
+--- a/config.mk
++++ b/config.mk
+@@ -14,3 +14,16 @@ export CORE_ASPECT_RATIO      = 1
+ export CORE_MARGIN            = 2
+ 
+ export TNS_END_PERCENT        = 100
++
++# --- Timing closure @ 2.89 ns evaluation clock (SDC constrains wb_clk @ 3.0 ns) ---
++# Synthesize technology mapping for a tighter clock so the netlist starts
++# with more margin than the 3.0 ns SDC asks for.
++export ABC_CLOCK_PERIOD_IN_PS = 2.70
++
++# Overfix setup: make every repair_timing call optimize toward a positive
++# slack target (at 3.0 ns) so the layout still closes when re-timed at 2.89 ns.
++export SETUP_SLACK_MARGIN     = 0.20
++
++# Repair setup/hold already during the placement resize stage (placement
++# parasitics), not only after CTS / global route.
++export ENABLE_PLACE_REPAIR_TIMING = 1

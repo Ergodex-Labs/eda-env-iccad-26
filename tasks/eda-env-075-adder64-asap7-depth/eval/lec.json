@@ -1,0 +1,9 @@
+{
+ "golden": [
+  "adder64.v"
+ ],
+ "targets": [
+  "src/adder64/adder64.v"
+ ],
+ "top": "adder64"
+}

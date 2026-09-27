@@ -1,0 +1,18 @@
+diff --git a/config.mk b/config.mk
+index 168879a..00de308 100644
+--- a/config.mk
++++ b/config.mk
+@@ -5,3 +5,13 @@ export DESIGN_NAME            = uart
+ 
+ export VERILOG_FILES = $(WS)/src/uart/uart.v
+ export SDC_FILE      = $(WS)/constraint.sdc
++
++# Floorplan at 45% core utilization
++export CORE_UTILIZATION = 45
++
++# Keep total negative slack focused on worst paths
++export TNS_END_PERCENT = 100
++
++# Avoid right-edge IO pins: met3 pin stubs there clash with the
++# power delivery (metal spacing / min-area DRC at the die boundary)
++export PLACE_PINS_ARGS = -exclude right:*

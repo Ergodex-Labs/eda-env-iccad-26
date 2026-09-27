@@ -1,0 +1,27 @@
+diff --git a/config.mk b/config.mk
+index dec7e3d..2a7d667 100644
+--- a/config.mk
++++ b/config.mk
+@@ -8,7 +8,7 @@ export PLATFORM    = nangate45
+ export VERILOG_FILES = $(DESIGN_HOME)/src/$(DESIGN_NAME)/swerv_wrapper.sv2v.v
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-export CORE_UTILIZATION = 65
++export CORE_UTILIZATION = 50
+ export CORE_ASPECT_RATIO = 1
+ export CORE_MARGIN = 5
+ 
+@@ -17,3 +17,13 @@ export TNS_END_PERCENT        = 100
+ 
+ export SWAP_ARITH_OPERATORS = 1
+ export OPENROAD_HIERARCHICAL = 1
++
++# --- timing closure tuning ---
++# Pre-CTS setup repair with placement parasitics (default off)
++export ENABLE_PLACE_REPAIR_TIMING = 1
++# Over-repair setup so post-route slack at the 2.40 ns eval clock lands >= 0
++export SETUP_SLACK_MARGIN = 0.15
++# More ABC synthesis restructuring rounds for a faster mapped netlist
++export ABC_SYN_ROUNDS = 8
++# Allow gate cloning to relieve high-fanout critical nets
++export SKIP_GATE_CLONING = 0

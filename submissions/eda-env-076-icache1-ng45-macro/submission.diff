@@ -1,0 +1,93 @@
+diff --git a/config.mk b/config.mk
+index f388705..1fad315 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,8 +1,8 @@
+-# icache1 @ nangate45 — F5 macro-integration given: a WORKING
+-# macro-less recipe. The store is behavioral flop
+-# array (src/icache1/spram_256x32.v), so the flow completes as
+-# given, but the memory spec of the task (one fakeram45_256x32
+-# SRAM macro) is not met.
++# icache1 @ nangate45 — F5 macro-integration: the data store bank
++# (src/icache1/spram_256x32.v) wraps one platform SRAM macro
++# fakeram45_256x32. The macro's physical views are declared below so
++# synthesis treats it as a black box (liberty) and placement gets its
++# footprint (LEF).
+ export PLATFORM               = nangate45
+ 
+ export DESIGN_NICKNAME        = icache1
+@@ -11,12 +11,23 @@ export DESIGN_NAME            = icache1
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/icache1/*.v))
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-# Each behavioral bank is 8192 bits; the platform default cap (4096)
+-# would refuse to synthesize it. The macro-less recipe is a WORKING
+-# baseline by family contract, so the cap is raised here.
+-export SYNTH_MEMORY_MAX_BITS    = 32768
++# Physical views of the fakeram45_256x32 macro (kit README).
++export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram45_256x32.lef
++export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/fakeram45_256x32.lib
+ 
+-export CORE_UTILIZATION         = 45
++# The bank is now a hard macro instance (black box), so Yosys does not
++# infer it. The tag store in the frozen top is still an inferred memory
++# (64x4 bits); keep the raised cap so synthesis accepts it as flops.
++export SYNTH_MEMORY_MAX_BITS  = 32768
++
++# Floorplan: the macro is 78.66 x 64.4 um, so the core must be larger
++# than the tiny flop-only baseline. Keep utilization low enough that
++# the macro plus the small standard-cell logic fits with room to route.
++export CORE_UTILIZATION         = 30
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
++
++# Halo around the macro for pin access and routing.
++export MACRO_PLACE_HALO         = 8 8
++
+ export TNS_END_PERCENT          = 100
+diff --git a/src/icache1/spram_256x32.v b/src/icache1/spram_256x32.v
+index 4b59e2f..4a52cf0 100644
+--- a/src/icache1/spram_256x32.v
++++ b/src/icache1/spram_256x32.v
+@@ -1,24 +1,29 @@
+-// spram_256x32: single-port synchronous SRAM bank, behavioral.
++// spram_256x32: single-port synchronous SRAM bank, implemented with the
++// platform SRAM macro fakeram45_256x32 (one macro instance per bank).
+ // Port contract (FROZEN — the module interface must not change):
+ //   cs=1, we=1 -> write wdata to addr; rdata holds.
+ //   cs=1, we=0 -> rdata <= mem[addr] (1-cycle read latency).
+ //   cs=0      -> rdata holds; memory unchanged.
++//
++// The macro's control pins are ACTIVE-LOW (ce_in, we_in) and its writes
++// are masked by w_mask_in; this wrapper adapts the active-high contract
++// above onto the macro with plain inversion and an all-ones write mask,
++// which preserves the cycle-level behavior exactly.
+ module spram_256x32 (
+     input             clk,
+     input             cs,
+     input             we,
+     input      [7:0]  addr,
+     input      [31:0] wdata,
+-    output reg [31:0] rdata
++    output     [31:0] rdata
+ );
+-    reg [31:0] mem [0:255];
+-
+-    always @(posedge clk) begin
+-        if (cs) begin
+-            if (we)
+-                mem[addr] <= wdata;
+-            else
+-                rdata <= mem[addr];
+-        end
+-    end
++    fakeram45_256x32 macro0 (
++        .clk       (clk),
++        .ce_in     (~cs),
++        .we_in     (~we),
++        .addr_in   (addr),
++        .wd_in     (wdata),
++        .w_mask_in (32'hFFFFFFFF),
++        .rd_out    (rdata)
++    );
+ endmodule

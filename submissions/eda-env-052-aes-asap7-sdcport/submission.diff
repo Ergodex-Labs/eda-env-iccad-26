@@ -1,0 +1,11 @@
+diff --git a/constraint.sdc b/constraint.sdc
+index a965044..b0de520 100644
+--- a/constraint.sdc
++++ b/constraint.sdc
+@@ -1,5 +1,5 @@
+ set clk_name clk
+-set clk_port_name clk_wrong
++set clk_port_name clk
+ set clk_period 410
+ set clk_io_pct 0.2
+ 

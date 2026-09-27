@@ -1,0 +1,81 @@
+diff --git a/abc.script b/abc.script
+new file mode 100644
+index 0000000..0643c2f
+--- /dev/null
++++ b/abc.script
+@@ -0,0 +1,51 @@
++&get -n
++&st
++&dch
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2
++&nf
++&st
++&dch
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2
++&nf
++&put
++buffer -c
++topo
++stime -c
++upsize -c
++dnsize -c
++stime -c
++upsize -c
++dnsize -c
+diff --git a/config.mk b/config.mk
+index 0a505bd..28699ff 100644
+--- a/config.mk
++++ b/config.mk
+@@ -8,7 +8,18 @@ export DESIGN_NAME            = systolic
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/systolic/*.v))
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-export CORE_UTILIZATION         = 50
++export CORE_UTILIZATION         = 55
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
+ export TNS_END_PERCENT          = 100
++
++# --- timing closure @ eval clock (1.40 ns) ---
++# Synthesis maps logic for a much tighter clock than the frozen 2.2 ns SDC.
++export ABC_CLOCK_PERIOD_IN_PS   = 1000
++# repair_timing targets period - margin (2.2 - 0.95 = 1.25 ns).
++export SETUP_SLACK_MARGIN       = 0.95
++# Extra setup/hold repair pass on placed parasitics at the resize stage.
++export ENABLE_PLACE_REPAIR_TIMING = 1
++# Custom ABC mapping script: extra &dch round + a second final sizing pass.
++# Produces a leaner/faster netlist than the stock speed script.
++export ABC_SCRIPT_FILE          = $(WS)/abc.script

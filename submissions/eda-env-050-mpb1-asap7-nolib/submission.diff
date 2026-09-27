@@ -1,0 +1,12 @@
+diff --git a/config.mk b/config.mk
+index 2a99717..14e6d4e 100644
+--- a/config.mk
++++ b/config.mk
+@@ -8,6 +8,7 @@ export VERILOG_FILES = $(WS)/src/mpb1/mpb_soc1.v
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+ export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram7_256x32.lef
++export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/NLDM/fakeram7_256x32.lib
+ 
+ export CORE_UTILIZATION       = 55
+ export CORE_ASPECT_RATIO      = 1

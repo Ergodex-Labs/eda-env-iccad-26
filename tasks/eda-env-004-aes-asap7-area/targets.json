@@ -1,0 +1,34 @@
+{
+  "budget_sec": 14400,
+  "eval_clk_ps": 400,
+  "gates": [
+    {
+      "metric": "wns",
+      "op": ">=",
+      "value": 0.0
+    },
+    {
+      "metric": "area_um2",
+      "op": "<=",
+      "ref": "noop",
+      "scale": 0.995
+    },
+    {
+      "metric": "drc_violations",
+      "op": "<=",
+      "value": 0
+    },
+    {
+      "metric": "instance_count",
+      "op": ">=",
+      "ref": "noop",
+      "scale": 0.8
+    }
+  ],
+  "reward": {
+    "metric": "area_um2",
+    "form": "inverse",
+    "scale": 1000000.0,
+    "units": "1/mm2"
+  }
+}

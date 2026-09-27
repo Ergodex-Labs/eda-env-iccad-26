@@ -1,0 +1,128 @@
+diff --git a/config.mk b/config.mk
+index b1daf31..ac22573 100644
+--- a/config.mk
++++ b/config.mk
+@@ -6,10 +6,10 @@ export DESIGN_NICKNAME        = aes
+ export VERILOG_FILES = $(sort $(wildcard $(DESIGN_HOME)/src/$(DESIGN_NICKNAME)/*.v))
+ export SDC_FILE      = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NICKNAME)/constraint.sdc
+ 
+-export CORE_UTILIZATION         = 55
++export CORE_UTILIZATION         = 70
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
+-export PLACE_DENSITY            = 0.55
++export PLACE_DENSITY            = 0.70
+ export TNS_END_PERCENT          = 100
+ 
+ ifeq ($(FLOW_VARIANT),top)
+@@ -26,3 +26,22 @@ else ifeq ($(FLOW_VARIANT),combine)
+ endif
+ 
+ export SYNTH_USE_SYN = 1
++
++# Area reduction: downsize/switch non-critical gates after global route.
++export RECOVER_POWER           = 100
++
++# The evaluation clock is 400 ps while the flow SDC is 380 ps, leaving ~20 ps
++# of setup margin. Let repair_timing accept slack down to -13 ps at the 380 ps
++# flow clock (i.e. ~+5 ps at the 400 ps eval clock) so it does less
++# buffering/up-sizing, trading the spare margin for area.
++export SETUP_SLACK_MARGIN      = -13
++
++# Skip the pessimistic pre-placement repair_design in synthesis (slew/cap is
++# repaired with real placement parasitics later). Controlled via the workspace
++# copy of synth_syn.tcl.
++export SKIP_PRE_PLACE_REPAIR   = 1
++
++# AREA: only apply timing net-reweighting to the most critical nets during
++# global placement, so the placer inserts fewer timing buffers (the 400 ps
++# eval clock leaves slack vs the 380 ps flow clock).
++export GLOBAL_PLACEMENT_ARGS   = -timing_driven_nets_percentage 50
+diff --git a/flow/scripts/synth_syn.tcl b/flow/scripts/synth_syn.tcl
+new file mode 100644
+index 0000000..e07efa7
+--- /dev/null
++++ b/flow/scripts/synth_syn.tcl
+@@ -0,0 +1,82 @@
++utl::set_metrics_stage "synth__{}"
++source $::env(SCRIPTS_DIR)/load.tcl
++erase_non_stage_variables synth
++
++source_env_var_if_exists PLATFORM_TCL
++source $::env(SCRIPTS_DIR)/read_liberty.tcl
++
++log_cmd read_lef $::env(TECH_LEF)
++log_cmd read_lef $::env(SC_LEF)
++if { [env_var_exists_and_non_empty ADDITIONAL_LEFS] } {
++  foreach lef $::env(ADDITIONAL_LEFS) {
++    log_cmd read_lef $lef
++  }
++}
++if { [env_var_exists_and_non_empty DONT_USE_CELLS] } {
++  log_cmd set_dont_use $::env(DONT_USE_CELLS)
++}
++
++# Setup verilog include directories
++set vIdirsArgs ""
++if { [env_var_exists_and_non_empty VERILOG_INCLUDE_DIRS] } {
++  foreach dir $::env(VERILOG_INCLUDE_DIRS) {
++    lappend vIdirsArgs "-I$dir"
++  }
++  set vIdirsArgs [join $vIdirsArgs]
++}
++
++set elaborate_args [list \
++  -D SYNTHESIS --compat=vcs --ignore-assertions --no-implicit-memories --top $::env(DESIGN_NAME) \
++  {*}$vIdirsArgs {*}[env_var_or_empty VERILOG_DEFINES]]
++
++lappend elaborate_args {*}$::env(VERILOG_FILES)
++
++# Apply top-level parameters
++dict for {key value} [env_var_or_empty VERILOG_TOP_PARAMS] {
++  lappend elaborate_args -G "$key=$value"
++}
++
++# Apply module blackboxing based on module names as they appear
++# in the input, that is before any module name mangling done
++# by elaboration and synthesis
++if { [env_var_exists_and_non_empty SYNTH_BLACKBOXES] } {
++  foreach m $::env(SYNTH_BLACKBOXES) {
++    lappend elaborate_args --blackboxed-module "$m"
++  }
++}
++
++lappend elaborate_args {*}$::env(SYNTH_SLANG_ARGS)
++
++# If the sources are solely .v files, enable Verilog compatibility
++set has_non_v_files false
++foreach fn $::env(VERILOG_FILES) {
++  if { [file extension [string trim $fn]] != ".v" } {
++    set has_non_v_files true
++  }
++}
++if { !$has_non_v_files } {
++  lappend elaborate_args --std=1364-2005
++}
++
++log_cmd sv_elaborate {*}$elaborate_args
++log_cmd syn::stats
++
++log_cmd synthesize
++
++log_cmd read_sdc $::env(SDC_FILE)
++# AREA: skip the aggressive pre-placement repair_design. With no placement
++# parasitics it falls back to pessimistic wire-load models and inserts ~1050
++# buffers (+22% area). Slew/cap is repaired later with real placement
++# parasitics in the resize stage, which needs far fewer buffers.
++if { ![env_var_exists_and_non_empty SKIP_PRE_PLACE_REPAIR] } {
++  log_cmd repair_design -pre_placement
++}
++
++report_metrics 1 "synth" false false
++
++orfs_write_db $::env(RESULTS_DIR)/1_synth.odb
++# Canonicalize 1_synth.sdc. The original SDC_FILE provided by
++# the user could have dependencies, such as sourcing util.tcl,
++# which are read in here and a canonicalized version is written
++# out by OpenSTA that has no dependencies.
++orfs_write_sdc $::env(RESULTS_DIR)/1_synth.sdc

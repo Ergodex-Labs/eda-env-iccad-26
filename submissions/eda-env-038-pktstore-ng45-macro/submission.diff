@@ -1,0 +1,89 @@
+diff --git a/config.mk b/config.mk
+index cb5219f..af5ee23 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,7 +1,6 @@
+-# pktstore @ nangate45 — F5 macro-integration given: a WORKING macro-less
+-# recipe. The banks are behavioral flop arrays (src/pktstore/spram_256x32.v),
+-# so the flow completes and closes timing, but the memory spec of the task
+-# (two fakeram45_256x32 SRAM macros) is not met.
++# pktstore @ nangate45 — F5 macro-integration: the two ping-pong banks are
++# the platform SRAM macro fakeram45_256x32 (one instance per bank, wrapped
++# by src/pktstore/spram_256x32.v which adapts the active-low control pins).
+ export PLATFORM               = nangate45
+ 
+ export DESIGN_NICKNAME        = pktstore
+@@ -10,12 +9,19 @@ export DESIGN_NAME            = pktstore
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/pktstore/*.v))
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-# The behavioral banks are 8192 bits each; the platform default cap
+-# (4096) would refuse to synthesize them. The macro-less recipe is a
+-# WORKING baseline by family contract, so the cap is raised here.
+-export SYNTH_MEMORY_MAX_BITS    = 32768
++# Macro physical views (kit: /workspace/kit). The liberty makes synthesis
++# treat fakeram45_256x32 as a black box; the LEF gives placement its
++# footprint and pins.
++export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram45_256x32.lef
++export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/fakeram45_256x32.lib
+ 
+-export CORE_UTILIZATION         = 45
++# Two 78.66 x 64.4 um macros (+8 um halo each) need a core large enough
++# for RTLMP to fit them; 45% utilization sizes the core too small.
++export CORE_UTILIZATION         = 25
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
+ export TNS_END_PERCENT          = 100
++
++# Keep the router off the macro edges and give the placer room for the
++# two 78.66 x 64.4 um macros.
++export MACRO_PLACE_HALO         = 8 8
+diff --git a/src/pktstore/spram_256x32.v b/src/pktstore/spram_256x32.v
+index 4b59e2f..32b0c8f 100644
+--- a/src/pktstore/spram_256x32.v
++++ b/src/pktstore/spram_256x32.v
+@@ -1,24 +1,32 @@
+-// spram_256x32: single-port synchronous SRAM bank, behavioral.
++// spram_256x32: single-port synchronous SRAM bank.
+ // Port contract (FROZEN — the module interface must not change):
+ //   cs=1, we=1 -> write wdata to addr; rdata holds.
+ //   cs=1, we=0 -> rdata <= mem[addr] (1-cycle read latency).
+ //   cs=0      -> rdata holds; memory unchanged.
++//
++// Implementation: wrapper around the Nangate45 platform SRAM macro
++// fakeram45_256x32. The macro's control pins are ACTIVE-LOW
++// (ce_in, we_in) and its writes are masked by w_mask_in; this bank
++// always writes full words, so the mask is tied to all-ones. The
++// polarity adaptation preserves the frozen cycle-level contract:
++//   cs=1, we=1 -> ce_in=0, we_in=0: masked (full) write; rd_out holds.
++//   cs=1, we=0 -> ce_in=0, we_in=1: rd_out <= mem[addr_in] (1-cycle).
++//   cs=0       -> ce_in=1:          rd_out holds; memory unchanged.
+ module spram_256x32 (
+     input             clk,
+     input             cs,
+     input             we,
+     input      [7:0]  addr,
+     input      [31:0] wdata,
+-    output reg [31:0] rdata
++    output     [31:0] rdata
+ );
+-    reg [31:0] mem [0:255];
+-
+-    always @(posedge clk) begin
+-        if (cs) begin
+-            if (we)
+-                mem[addr] <= wdata;
+-            else
+-                rdata <= mem[addr];
+-        end
+-    end
++    fakeram45_256x32 macro (
++        .clk       (clk),
++        .ce_in     (~cs),
++        .we_in     (~we),
++        .addr_in   (addr),
++        .wd_in     (wdata),
++        .w_mask_in (32'hFFFFFFFF),
++        .rd_out    (rdata)
++    );
+ endmodule

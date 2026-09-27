@@ -1,0 +1,46 @@
+diff --git a/config.mk b/config.mk
+index 1955b07..d170f38 100644
+--- a/config.mk
++++ b/config.mk
+@@ -12,3 +12,25 @@ export CORE_UTILIZATION         = 50
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
+ export TNS_END_PERCENT          = 100
++
++# --- Timing closure at the 470 ps evaluation clock -------------------------
++# The flow SDC is frozen at 600 ps, so all optimization is steered to a
++# tighter in-flow target (OPT_CLK_PERIOD, ps) via a clock-rewrite hook that
++# runs at the start of the floorplan stage; the tightened clock is then
++# propagated through every later stage's written SDC.
++export OPT_CLK_PERIOD           = 250
++
++# Fastest threshold-voltage flavor for the whole library.
++export ASAP7_USE_VT             = SLVT
++
++# Make ABC synthesize for the tightened clock as well.
++export ABC_CLOCK_PERIOD_IN_PS   = $(OPT_CLK_PERIOD)
++
++# Clock-tightening hook: applied at floorplan (persists into all downstream
++# SDCs) and re-applied defensively before every timing-driven stage.
++export PRE_FLOORPLAN_TCL        = $(WS)/hooks/tighten_clock.tcl
++export PRE_GLOBAL_PLACE_TCL     = $(WS)/hooks/tighten_clock.tcl
++export PRE_RESIZE_TCL           = $(WS)/hooks/tighten_clock.tcl
++export PRE_CTS_TCL              = $(WS)/hooks/tighten_clock.tcl
++export PRE_GLOBAL_ROUTE_TCL     = $(WS)/hooks/tighten_clock.tcl
++
+diff --git a/hooks/tighten_clock.tcl b/hooks/tighten_clock.tcl
+new file mode 100644
+index 0000000..3112fb9
+--- /dev/null
++++ b/hooks/tighten_clock.tcl
+@@ -0,0 +1,10 @@
++# Tighten the clock for all in-flow optimization so the layout closes
++# well below the 470 ps evaluation clock. The eval SDC is applied by the
++# verifier; this only steers synthesis/PnR optimization targets.
++# Re-declaring a clock with the same name replaces the previous one.
++if { ![info exists ::env(OPT_CLK_PERIOD)] } {
++  set ::env(OPT_CLK_PERIOD) 420
++}
++set opt_period $::env(OPT_CLK_PERIOD)
++create_clock -name clk -period $opt_period [get_ports clk]
++puts "hook: tightened clk to $opt_period ps"

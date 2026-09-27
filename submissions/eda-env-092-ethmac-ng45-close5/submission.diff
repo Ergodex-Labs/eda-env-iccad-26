@@ -1,0 +1,29 @@
+diff --git a/config.mk b/config.mk
+index f4b8d24..896e4ec 100644
+--- a/config.mk
++++ b/config.mk
+@@ -9,8 +9,23 @@ export DESIGN_NICKNAME        = ethmac
+ export VERILOG_FILES         = $(sort $(wildcard $(DESIGN_HOME)/src/$(DESIGN_NICKNAME)/*.v))
+ export SDC_FILE              = $(WS)/constraint.sdc
+ 
+-export CORE_UTILIZATION       = 50
++export CORE_UTILIZATION       = 60
+ export CORE_ASPECT_RATIO      = 1
+ export CORE_MARGIN            = 2
+ 
+ export TNS_END_PERCENT        = 100
++
++# Target the fast mrx/mtx domains (0.9ns, scaled to ~0.87ns at the 2.90ns
++# evaluation clock) during technology mapping instead of the 3.0ns wb clock.
++export ABC_CLOCK_PERIOD_IN_PS = 800
++
++# Build setup margin so post-route slack survives the tighter eval clock.
++export SETUP_SLACK_MARGIN     = 0.15
++
++# Repair timing already during placement (placement parasitics).
++export ENABLE_PLACE_REPAIR_TIMING = 1
++
++# Deeper ABC optimization to speed up the counter/compare logic that
++# bounds the mrx/mtx domains.
++export ABC_SYN_ROUNDS         = 8
++

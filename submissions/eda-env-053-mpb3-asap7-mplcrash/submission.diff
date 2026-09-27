@@ -1,0 +1,21 @@
+diff --git a/config.mk b/config.mk
+index f2a2ed8..2ae337e 100644
+--- a/config.mk
++++ b/config.mk
+@@ -10,8 +10,14 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram7_256x32.lef
+ export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/NLDM/fakeram7_256x32.lib
+ 
+-export CORE_UTILIZATION       = 80
++# 24x fakeram7_256x32 (8.36 x 42 um, total 8427 um^2) cannot be packed
++# by rtl_macro_placer into the ~104 um core produced by 80% utilization
++# (MPL-0065 / MPL-0003: no valid tilings).  Enlarge the die so the core
++# is ~132 um on a side (util 50%), which RTLMP can tile, and shrink the
++# macro halo to 1 um to ease packing.
++export CORE_UTILIZATION       = 50
+ export CORE_ASPECT_RATIO      = 1
+ export CORE_MARGIN            = 2
+-export MACRO_PLACE_HALO       = 3 3
++export MACRO_PLACE_HALO       = 1 1
++export MACRO_BLOCKAGE_HALO    = 1
+ export TNS_END_PERCENT        = 100

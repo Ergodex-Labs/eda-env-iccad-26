@@ -1,0 +1,91 @@
+diff --git a/config.mk b/config.mk
+index f4d0075..c08cad4 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,7 @@
+-# mpb_soc1 @ asap7 — F4 given: DEGRADED macro-placement recipe.
+-# Dose: halo 0.1 + util pushed to 68. The flow completes but the layout fails sign-off
+-# (macro crowding -> routing DRCs / timing, per the 036 break class).
++# mpb_soc1 @ asap7 — repaired macro-placement recipe.
++# 16 fakeram7_256x32 SRAM macros (8.36 x 42.0 um each) are placed on a
++# deterministic 8x2 grid (hooks/macro_placement.tcl) with uniform routing
++# channels, replacing the crowded automatic placement that failed sign-off.
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NAME            = mpb_soc1
+@@ -12,8 +13,19 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram7_256x32.lef
+ export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/NLDM/fakeram7_256x32.lib
+ 
+-export CORE_UTILIZATION       = 80
+-export CORE_ASPECT_RATIO      = 1
+-export CORE_MARGIN            = 2
+-export MACRO_PLACE_HALO       = 3 3
++# Explicit floorplan geometry. The macro grid spans x:[8,114.36] y:[8,98];
++# the core wraps it with margin, leaving room in the channels for the clock
++# tree and std cells. Core area = 118 x 100 = 11800 um^2 against a macro+logic
++# area of ~5813 um^2  ->  floorplan core utilization ~49% (near 50%).
++export DIE_AREA               = 0 0 126 108
++export CORE_AREA              = 4 4 122 104
++
++# Deterministic manual macro placement (consumed by flow/scripts/macro_place.tcl).
++export MACRO_PLACEMENT_TCL    = $(WS)/hooks/macro_placement.tcl
++
++# Halo / blockage around each macro so tapcell rows are cut and std cells keep
++# out of the macro channels.
++export MACRO_PLACE_HALO       = 4 4
++export MACRO_BLOCKAGE_HALO    = 2
++
+ export TNS_END_PERCENT        = 100
+diff --git a/flow/scripts/macro_place.tcl b/flow/scripts/macro_place.tcl
+new file mode 100644
+index 0000000..3692094
+--- /dev/null
++++ b/flow/scripts/macro_place.tcl
+@@ -0,0 +1,18 @@
++# Deterministic macro placement for mpb_soc1.
++# Overrides the default stage: instead of rtl_macro_placer (which crowded the
++# 16 tall SRAM macros and starved routing channels), place every macro at an
++# explicit grid coordinate via hooks/macro_placement.tcl and lock it down.
++source $::env(SCRIPTS_DIR)/load.tcl
++erase_non_stage_variables floorplan
++load_design 2_1_floorplan.odb 2_1_floorplan.sdc
++source_step_tcl PRE MACRO_PLACE
++
++# Manual, deterministic placement of all macros (sets them FIXED).
++log_cmd source $::env(MACRO_PLACEMENT_TCL)
++
++source_step_tcl POST MACRO_PLACE
++
++report_design_area
++
++orfs_write_db $::env(RESULTS_DIR)/2_2_floorplan_macro.odb
++write_macro_placement $::env(RESULTS_DIR)/2_2_floorplan_macro.tcl
+diff --git a/hooks/macro_placement.tcl b/hooks/macro_placement.tcl
+new file mode 100644
+index 0000000..8ae13f5
+--- /dev/null
++++ b/hooks/macro_placement.tcl
+@@ -0,0 +1,22 @@
++# Deterministic grid placement for the 16 fakeram7_256x32 macros.
++# 8 columns x 2 rows, vertical orientation, uniform routing channels.
++# column pitch 14.0 um (5.64 um vertical routing channel),
++# row pitch 48.0 um (6.0 um horizontal channel for the clock tree).
++# Instance names contain literal backslashes (g_bank\[N\].u_mem);
++# in Tcl double quotes each literal backslash is written as \\ .
++place_macro -macro_name "g_bank\\\[0\\\].u_mem" -location {8.000 8.000} -orientation R0
++place_macro -macro_name "g_bank\\\[1\\\].u_mem" -location {22.000 8.000} -orientation R0
++place_macro -macro_name "g_bank\\\[2\\\].u_mem" -location {36.000 8.000} -orientation R0
++place_macro -macro_name "g_bank\\\[3\\\].u_mem" -location {50.000 8.000} -orientation R0
++place_macro -macro_name "g_bank\\\[4\\\].u_mem" -location {64.000 8.000} -orientation R0
++place_macro -macro_name "g_bank\\\[5\\\].u_mem" -location {78.000 8.000} -orientation R0
++place_macro -macro_name "g_bank\\\[6\\\].u_mem" -location {92.000 8.000} -orientation R0
++place_macro -macro_name "g_bank\\\[7\\\].u_mem" -location {106.000 8.000} -orientation R0
++place_macro -macro_name "g_bank\\\[8\\\].u_mem" -location {8.000 56.000} -orientation R0
++place_macro -macro_name "g_bank\\\[9\\\].u_mem" -location {22.000 56.000} -orientation R0
++place_macro -macro_name "g_bank\\\[10\\\].u_mem" -location {36.000 56.000} -orientation R0
++place_macro -macro_name "g_bank\\\[11\\\].u_mem" -location {50.000 56.000} -orientation R0
++place_macro -macro_name "g_bank\\\[12\\\].u_mem" -location {64.000 56.000} -orientation R0
++place_macro -macro_name "g_bank\\\[13\\\].u_mem" -location {78.000 56.000} -orientation R0
++place_macro -macro_name "g_bank\\\[14\\\].u_mem" -location {92.000 56.000} -orientation R0
++place_macro -macro_name "g_bank\\\[15\\\].u_mem" -location {106.000 56.000} -orientation R0

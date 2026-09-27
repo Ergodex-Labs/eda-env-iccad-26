@@ -1,0 +1,6 @@
+{
+ "mode": "SCOPED",
+ "scope": [
+  "src/keyvault1/spram_256x32\\.v"
+ ]
+}

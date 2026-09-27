@@ -1,0 +1,13 @@
+{
+ "tb": "tb_scratch1.v",
+ "frozen": [
+  "scratch1.v"
+ ],
+ "extra": [
+  "fakeram45_256x32.v"
+ ],
+ "targets": [
+  "src/scratch1/spram_256x32.v"
+ ],
+ "top": "tb_scratch1"
+}

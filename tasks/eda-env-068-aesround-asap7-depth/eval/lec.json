@@ -1,0 +1,9 @@
+{
+ "golden": [
+  "mixcolumns.v"
+ ],
+ "targets": [
+  "src/aesround/mixcolumns.v"
+ ],
+ "top": "mixcolumns"
+}

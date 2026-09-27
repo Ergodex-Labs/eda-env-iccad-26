@@ -1,0 +1,15 @@
+diff --git a/pdn.tcl b/pdn.tcl
+index 582ca48..e7d84a3 100644
+--- a/pdn.tcl
++++ b/pdn.tcl
+@@ -16,8 +16,8 @@ set_voltage_domain -name {CORE} -power {VDD} -ground {VSS}
+ ####################################
+ define_pdn_grid -name {grid} -voltage_domains {CORE} -pins {metal7}
+ add_pdn_stripe -grid {grid} -layer {metal1} -width {0.17} -pitch {2.4} -offset {0} -followpins
+-add_pdn_stripe -grid {grid} -layer {metal4} -width {0.14} -pitch {56.0} -offset {2}
+-add_pdn_stripe -grid {grid} -layer {metal7} -width {0.84} -pitch {30.0} -offset {2}
++add_pdn_stripe -grid {grid} -layer {metal4} -width {0.48} -pitch {28.0} -offset {2}
++add_pdn_stripe -grid {grid} -layer {metal7} -width {1.40} -pitch {20.0} -offset {2}
+ add_pdn_connect -grid {grid} -layers {metal1 metal4}
+ add_pdn_connect -grid {grid} -layers {metal4 metal7}
+ ####################################

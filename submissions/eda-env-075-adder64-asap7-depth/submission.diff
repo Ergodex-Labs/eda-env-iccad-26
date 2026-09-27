@@ -1,0 +1,50 @@
+diff --git a/config.mk b/config.mk
+index 2fa5dd1..bc723f3 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,7 +1,11 @@
+-# adder64 @ asap7 — F12 recipe-only given: the WORKING stock recipe.
+-# The flow completes and closes its own 400 ps flow clock; the
+-# trapped eval clock is tighter, and the stock synthesis recipe does
+-# not reach it.
++# adder64 @ asap7 — recipe tuned to shorten the carry critical path.
++# Stock recipe closes the 400 ps flow clock but misses the 360 ps eval
++# clock: the carry stage combinational depth dominates. Levers used here:
++#   * multi-Vt (SLVT primary) libraries for much faster cells
++#   * full-adder techmap extraction disabled so ABC maps the whole adder
++#     to a tight delay target (prefix network) instead of slow HAxp5 cells
++#   * ABC delay target over-constrained well below the eval clock
++#   * repair_timing over-constrained via a setup slack margin
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NICKNAME        = adder64
+@@ -10,7 +14,28 @@ export DESIGN_NAME            = adder64
+ export VERILOG_FILES = $(WS)/src/adder64/adder64.v
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-export CORE_UTILIZATION       = 55
++export CORE_UTILIZATION       = 45
+ export CORE_ASPECT_RATIO      = 1
+ export CORE_MARGIN            = 2
+ export TNS_END_PERCENT        = 100
++
++# --- Carry critical-path shortening ---------------------------------------
++# Multi-Vt: SLVT primary (fastest), LVT/RVT available for leakage recovery.
++export ASAP7_USE_VT           = SLVT LVT RVT
++
++# Flat synthesis: the default -extra-map lcu_kogge_stone.v maps the carry
++# to a Kogge-Stone LCU while keeping the netlist flat so repair_timing can
++# buffer every net on the carry path (no hierarchical operator boxes).
++
++# Over-constrain the ABC delay target far below the 360 ps eval clock so
++# the mapper builds a short carry structure with margin.
++export ABC_CLOCK_PERIOD_IN_PS = 200
++
++# Disable full-adder techmap extraction (ADDER_MAP_FILE) so ABC maps the
++# entire adder to the tight delay target instead of using HAxp5 cells whose
++# high-fanout sum node dominates the carry critical path.
++export ADDER_MAP_FILE         =
++
++# Make repair_timing optimize as if the clock were tighter than the 400 ps
++# flow clock, buying real margin against the 360 ps eval clock.
++export SETUP_SLACK_MARGIN     = 180

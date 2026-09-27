@@ -1,0 +1,6 @@
+{
+ "mode": "SCOPED",
+ "scope": [
+  "src/icache2/spram_256x32\\.v"
+ ]
+}

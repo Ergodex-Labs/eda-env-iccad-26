@@ -1,0 +1,29 @@
+{
+  "budget_sec": 14400,
+  "eval_clk_ps": 400,
+  "gates": [
+    {
+      "metric": "ecp",
+      "op": "<=",
+      "ref": "noop",
+      "scale": 0.998
+    },
+    {
+      "metric": "drc_violations",
+      "op": "<=",
+      "value": 0
+    },
+    {
+      "metric": "instance_count",
+      "op": ">=",
+      "ref": "noop",
+      "scale": 0.6
+    }
+  ],
+  "reward": {
+    "metric": "ecp",
+    "form": "inverse",
+    "scale": 1000.0,
+    "units": "GHz"
+  }
+}

@@ -1,0 +1,21 @@
+diff --git a/config.mk b/config.mk
+index 419c77f..44c490c 100644
+--- a/config.mk
++++ b/config.mk
+@@ -31,3 +31,16 @@ export TNS_END_PERCENT        = 100
+ export SWAP_ARITH_OPERATORS = 1
+ export OPENROAD_HIERARCHICAL = 1
+ 
++# Use multiple threshold-voltage libraries so the optimizer can pick
++# faster (lower-Vt) cells on critical paths. Primary (first) VT is used
++# for synthesis/mapping; the rest are available for VT-swap during
++# timing repair. ECP is the only metric being optimized, so favor speed.
++export ASAP7_USE_VT = SLVT LVT RVT
++
++# Ask repair_timing to keep optimizing until every path has this much
++# setup slack, rather than stopping once timing is merely met (TNS=0).
++# This is the main ECP lever: it drives the CTS/GRT repair stages to build
++# real positive setup margin at sign-off. 30ps is the empirically-tuned
++# sweet spot for this design (lower or higher both produce worse ECP).
++export SETUP_SLACK_MARGIN = 30
++

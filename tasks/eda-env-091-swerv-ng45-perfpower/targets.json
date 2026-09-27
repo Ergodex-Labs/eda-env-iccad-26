@@ -1,0 +1,40 @@
+{
+  "budget_sec": 14400,
+  "eval_clk_ps": 2.44,
+  "gates": [
+    {
+      "metric": "wns",
+      "op": ">=",
+      "value": 0.0
+    },
+    {
+      "metric": "area_um2",
+      "op": "<=",
+      "ref": "noop",
+      "scale": 1.05
+    },
+    {
+      "metric": "power_total",
+      "op": "<=",
+      "ref": "noop",
+      "scale": 1.1
+    },
+    {
+      "metric": "drc_violations",
+      "op": "<=",
+      "value": 0
+    },
+    {
+      "metric": "instance_count",
+      "op": ">=",
+      "ref": "noop",
+      "scale": 0.8
+    }
+  ],
+  "reward": {
+    "metric": "ecp",
+    "form": "inverse",
+    "scale": 1.0,
+    "units": "GHz"
+  }
+}

@@ -1,0 +1,6 @@
+{
+ "mode": "SCOPED",
+ "scope": [
+  "src/fir4/fir4\\.v"
+ ]
+}

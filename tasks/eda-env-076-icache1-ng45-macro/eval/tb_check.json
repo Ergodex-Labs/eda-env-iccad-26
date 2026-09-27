@@ -1,0 +1,13 @@
+{
+ "tb": "tb_icache1.v",
+ "frozen": [
+  "icache1.v"
+ ],
+ "extra": [
+  "fakeram45_256x32.v"
+ ],
+ "targets": [
+  "src/icache1/spram_256x32.v"
+ ],
+ "top": "tb_icache1"
+}

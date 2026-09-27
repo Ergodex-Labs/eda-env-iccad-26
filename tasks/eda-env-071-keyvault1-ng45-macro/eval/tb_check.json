@@ -1,0 +1,13 @@
+{
+ "tb": "tb_keyvault1.v",
+ "frozen": [
+  "keyvault1.v"
+ ],
+ "extra": [
+  "fakeram45_256x32.v"
+ ],
+ "targets": [
+  "src/keyvault1/spram_256x32.v"
+ ],
+ "top": "tb_keyvault1"
+}

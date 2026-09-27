@@ -1,0 +1,6 @@
+{
+ "mode": "SCOPED",
+ "scope": [
+  "src/pktstore/spram_256x32\\.v"
+ ]
+}

@@ -1,0 +1,26 @@
+{
+  "budget_sec": 14400,
+  "eval_clk_ps": 385.5,
+  "gates": [
+    {
+      "metric": "wns",
+      "op": ">=",
+      "value": 0.0
+    },
+    {
+      "metric": "drc_violations",
+      "op": "<=",
+      "value": 0
+    },
+    {
+      "metric": "instance_count",
+      "op": ">=",
+      "value": 10505
+    }
+  ],
+  "reward": {
+    "form": "gate",
+    "scale": 1.0,
+    "units": "pass"
+  }
+}

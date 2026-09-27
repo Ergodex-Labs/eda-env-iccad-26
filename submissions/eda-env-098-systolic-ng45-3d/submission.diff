@@ -1,0 +1,73 @@
+diff --git a/abc.script b/abc.script
+new file mode 100644
+index 0000000..38760ee
+--- /dev/null
++++ b/abc.script
+@@ -0,0 +1,48 @@
++&get -n
++&st
++&dch -f
++&nf
++&st
++&syn3
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn3
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn3
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn3
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn3
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn3
++&if -g -K 6
++&synch2
++&nf
++&st
++&syn3
++&if -g -K 6
++&synch2
++&nf
++&put
++buffer -c
++topo
++stime -c
++upsize -c
++dnsize -c
++stime -c
++upsize -c
++dnsize -c
+diff --git a/config.mk b/config.mk
+index 5921669..34e50c4 100644
+--- a/config.mk
++++ b/config.mk
+@@ -8,7 +8,13 @@ export DESIGN_NAME            = systolic
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/systolic/*.v))
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-export CORE_UTILIZATION         = 50
++export CORE_UTILIZATION         = 65
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
+ export TNS_END_PERCENT          = 100
++
++# Timing closure @ eval clock
++export ENABLE_PLACE_REPAIR_TIMING = 1
++export SETUP_SLACK_MARGIN         = 0.20
++export ABC_CLOCK_PERIOD_IN_PS     = 1.05
++export ABC_SCRIPT_FILE            = $(WS)/abc.script

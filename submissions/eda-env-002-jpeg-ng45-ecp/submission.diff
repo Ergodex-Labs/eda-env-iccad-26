@@ -1,0 +1,33 @@
+diff --git a/config.mk b/config.mk
+index 67ef713..a73b292 100644
+--- a/config.mk
++++ b/config.mk
+@@ -5,9 +5,27 @@ export PLATFORM    = nangate45
+ export VERILOG_FILES = $(sort $(wildcard $(DESIGN_HOME)/src/$(DESIGN_NICKNAME)/*.v))
+ export VERILOG_INCLUDE_DIRS = $(DESIGN_HOME)/src/$(DESIGN_NICKNAME)/include
+ export SDC_FILE = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NICKNAME)/constraint.sdc
++
++# Area-oriented ABC mapping proved better for ECP than the speed script on
++# this carry-chain-dominated design (measured: area -> ws -0.108, speed -> -0.19).
+ export ABC_AREA = 1
++# Bias the ABC area mapper toward delay: -B is the area-recovery bound, a lower
++# value restricts area recovery and keeps a faster (deeper-optimized) mapping
++# for the carry-chain-dominated critical paths.
++export ABC_MAP_ARGS = -B 0.1
+ 
+ export CORE_UTILIZATION ?= 80
+ export PLACE_DENSITY_LB_ADDON = 0.20
+-export TNS_END_PERCENT        = 100
+ 
++# --- Timing repair -----------------------------------------------------------
++# Repair setup (and hold) already during the placement stage using placement
++# parasitics, then again in CTS and global route.
++export ENABLE_PLACE_REPAIR_TIMING = 1
++# Over-constrain setup repair so the optimizer pushes the worst slack positive
++# instead of stopping at exactly zero.
++export SETUP_SLACK_MARGIN = 0.10
++# Enable the aggressive "last gasp" final optimization pass in repair_timing
++# (it is skipped by default); it can squeeze extra slack out of critical paths.
++export SKIP_LAST_GASP = 0
++# Repair all failing paths, not just the worst few.
++export TNS_END_PERCENT = 100

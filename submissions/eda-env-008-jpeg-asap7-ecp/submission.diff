@@ -1,0 +1,81 @@
+diff --git a/config.mk b/config.mk
+index 3d17672..41d18e9 100644
+--- a/config.mk
++++ b/config.mk
+@@ -13,3 +13,23 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+ export FLOORPLAN_DEF = $(WS)/floorplan.def
+ export TNS_END_PERCENT        = 100
++
++# --- Speed tuning ---
++# Multi-VT: synthesize/place with RVT, let repair_timing swap critical
++# paths to faster LVT/SLVT cells (all three VT libs + LEFs get loaded).
++export ASAP7_USE_VT           = RVT LVT SLVT
++
++# Synthesis: more ABC speed rounds for a better-mapped netlist.
++export ABC_SYN_ROUNDS         = 8
++
++# Placement: a bit more room than the 0.60 default helps timing-driven
++# placement and keeps routing DRC-free on this ~64k-instance design.
++export PLACE_DENSITY          = 0.55
++
++# Generate multiple arithmetic-architecture options (Booth multipliers,
++# fast adders) and let the flow swap operators to improve timing QoR on
++# the DCT multiplier/accumulate critical paths.
++export SYNTH_WRAPPED_OPERATORS = 1
++export SWAP_ARITH_OPERATORS    = 1
++export OPENROAD_HIERARCHICAL   = 1
++
+diff --git a/flow/scripts/resize.tcl b/flow/scripts/resize.tcl
+new file mode 100644
+index 0000000..73321e7
+--- /dev/null
++++ b/flow/scripts/resize.tcl
+@@ -0,0 +1,47 @@
++utl::set_metrics_stage "placeopt__{}"
++source $::env(SCRIPTS_DIR)/load.tcl
++erase_non_stage_variables place
++load_design 3_3_place_gp.odb 2_floorplan.sdc
++source_step_tcl PRE RESIZE
++
++log_cmd estimate_parasitics -placement
++
++set instance_count_before [sta::network_leaf_instance_count]
++set pin_count_before [sta::network_leaf_pin_count]
++
++set_dont_use $::env(DONT_USE_CELLS)
++
++if { [env_var_exists_and_non_empty EARLY_SIZING_CAP_RATIO] } {
++  log_cmd set_opt_config -set_early_sizing_cap_ratio $env(EARLY_SIZING_CAP_RATIO)
++}
++
++if { [env_var_exists_and_non_empty SWAP_ARITH_OPERATORS] } {
++  # Enable sanity checker until replace_arith_modules becomes stable
++  set_debug_level ODB replace_design_check_sanity 1
++  replace_arith_modules
++  global_placement -incremental
++}
++
++repair_design_helper
++
++if { $::env(ENABLE_PLACE_REPAIR_TIMING) } {
++  # Repair timing using placement parasitics.
++  puts "Repair setup and hold violations..."
++  log_cmd estimate_parasitics -placement
++
++  repair_timing_helper
++}
++
++# post report
++
++puts "Floating nets: "
++report_floating_nets
++
++report_metrics 3 "resizer" true false
++
++puts "Instance count before $instance_count_before, after [sta::network_leaf_instance_count]"
++puts "Pin count before $pin_count_before, after [sta::network_leaf_pin_count]"
++
++source_step_tcl POST RESIZE
++
++orfs_write_db $::env(RESULTS_DIR)/3_4_place_resized.odb

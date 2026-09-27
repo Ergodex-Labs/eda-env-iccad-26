@@ -1,0 +1,36 @@
+diff --git a/config.mk b/config.mk
+index 5b49fec..4dc17fe 100644
+--- a/config.mk
++++ b/config.mk
+@@ -13,6 +13,16 @@ export CORE_MARGIN              = 2
+ export PLACE_DENSITY            = 0.55
+ export TNS_END_PERCENT          = 100
+ 
++# Timing closure: enable setup/hold repair during the placement resize
++# stage (disabled by default). Gives repair_timing freedom to size/buffer/
++# VT-swap before CTS, helping close the small residual setup violation.
++export ENABLE_PLACE_REPAIR_TIMING = 1
++
++# Use low-Vt (faster) standard cells to close setup timing at the tight clock.
++# Leakage is a negligible fraction of total power for this design, so total
++# power stays well within budget while the critical path gets faster.
++export ASAP7_USE_VT = LVT
++
+ ifeq ($(FLOW_VARIANT),top)
+ 	export DESIGN_NAME = aes_cipher_top
+ 	export SYNTH_BLACKBOXES = aes_key_expand_128
+diff --git a/pdn.tcl b/pdn.tcl
+index acd48db..957274d 100644
+--- a/pdn.tcl
++++ b/pdn.tcl
+@@ -17,8 +17,8 @@ set_voltage_domain -name {CORE} -power {VDD} -ground {VSS}
+ define_pdn_grid -name {top} -voltage_domains {CORE} -pins {M6}
+ add_pdn_stripe -grid {top} -layer {M1} -width {0.018} -pitch {0.54} -offset {0} -followpins
+ add_pdn_stripe -grid {top} -layer {M2} -width {0.018} -pitch {0.54} -offset {0} -followpins
+-add_pdn_stripe -grid {top} -layer {M5} -width {0.12} -spacing {0.072} -pitch {21.6} -offset {0.300}
+-add_pdn_stripe -grid {top} -layer {M6} -width {0.288} -spacing {0.096} -pitch {21.6} -offset {0.513}
++add_pdn_stripe -grid {top} -layer {M5} -width {0.12} -spacing {0.072} -pitch {2.7} -offset {0.300}
++add_pdn_stripe -grid {top} -layer {M6} -width {0.288} -spacing {0.096} -pitch {2.7} -offset {0.513}
+ add_pdn_connect -grid {top} -layers {M1 M2}
+ add_pdn_connect -grid {top} -layers {M2 M5}
+ add_pdn_connect -grid {top} -layers {M5 M6}

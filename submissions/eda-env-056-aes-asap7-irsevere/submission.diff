@@ -1,0 +1,37 @@
+diff --git a/config.mk b/config.mk
+index 5b49fec..c5affe6 100644
+--- a/config.mk
++++ b/config.mk
+@@ -13,6 +13,11 @@ export CORE_MARGIN              = 2
+ export PLACE_DENSITY            = 0.55
+ export TNS_END_PERCENT          = 100
+ 
++# Add the LVT standard-cell variant alongside the default RVT.  This lets the
++# resizer swap critical-path cells to faster low-Vt devices, recovering the
++# setup slack needed to close timing at the 400 ps clock.
++export ASAP7_USE_VT             = RVT LVT
++
+ ifeq ($(FLOW_VARIANT),top)
+ 	export DESIGN_NAME = aes_cipher_top
+ 	export SYNTH_BLACKBOXES = aes_key_expand_128
+diff --git a/pdn.tcl b/pdn.tcl
+index 712c2f6..15abf32 100644
+--- a/pdn.tcl
++++ b/pdn.tcl
+@@ -14,11 +14,14 @@ set_voltage_domain -name {CORE} -power {VDD} -ground {VSS}
+ ####################################
+ # standard cell grid
+ ####################################
++# Strengthened power grid: the original used a 43.2 um M5/M6 stripe pitch
++# which starved the core and caused excessive IR drop.  Use a dense M5/M6
++# mesh (pitch 5.4 um) with generous widths to cut the worst-case VDD drop.
+ define_pdn_grid -name {top} -voltage_domains {CORE} -pins {M6}
+ add_pdn_stripe -grid {top} -layer {M1} -width {0.018} -pitch {0.54} -offset {0} -followpins
+ add_pdn_stripe -grid {top} -layer {M2} -width {0.018} -pitch {0.54} -offset {0} -followpins
+-add_pdn_stripe -grid {top} -layer {M5} -width {0.12} -spacing {0.072} -pitch {43.2} -offset {0.300}
+-add_pdn_stripe -grid {top} -layer {M6} -width {0.288} -spacing {0.096} -pitch {43.2} -offset {0.513}
++add_pdn_stripe -grid {top} -layer {M5} -width {0.12} -spacing {0.072} -pitch {5.4} -offset {0.300}
++add_pdn_stripe -grid {top} -layer {M6} -width {0.288} -spacing {0.096} -pitch {5.4} -offset {0.513}
+ add_pdn_connect -grid {top} -layers {M1 M2}
+ add_pdn_connect -grid {top} -layers {M2 M5}
+ add_pdn_connect -grid {top} -layers {M5 M6}

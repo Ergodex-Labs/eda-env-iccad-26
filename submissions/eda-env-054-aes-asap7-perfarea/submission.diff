@@ -1,0 +1,22 @@
+diff --git a/config.mk b/config.mk
+index b1daf31..db2de27 100644
+--- a/config.mk
++++ b/config.mk
+@@ -12,6 +12,17 @@ export CORE_MARGIN              = 2
+ export PLACE_DENSITY            = 0.55
+ export TNS_END_PERCENT          = 100
+ 
++# --- Timing closure @ 340ps eval clock (SDC is 380ps) ---
++# Multi-Vt strategy: map the bulk of the design on low-power RVT, and make the
++# faster LVT/SLVT flavors available so repair_timing swaps only critical paths.
++# This closes timing at minimum dynamic-power cost (leakage is negligible here).
++export ASAP7_USE_VT             = RVT LVT SLVT
++# Enable setup timing repair during the placement/resize stage.
++export ENABLE_PLACE_REPAIR_TIMING = 1
++# Repair setup to a positive margin at the 380ps SDC clock so that the
++# 40ps-tighter 340ps eval clock still closes (and to push effective period down).
++export SETUP_SLACK_MARGIN       = 78
++
+ ifeq ($(FLOW_VARIANT),top)
+ 	export DESIGN_NAME = aes_cipher_top
+ 	export SYNTH_BLACKBOXES = aes_key_expand_128

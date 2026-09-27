@@ -1,0 +1,603 @@
+[
+  {
+    "task": "eda-env-001-aes-asap7-ecp",
+    "submission": "submissions/eda-env-001-aes-asap7-ecp/submission.diff",
+    "sha256": "5245c17e35043968c19dab47cac8aa2a0ee8d4cb323ecfd40580c5b5fc421b99",
+    "reported_gate": 1.0,
+    "reported_reward": 3.430191
+  },
+  {
+    "task": "eda-env-002-jpeg-ng45-ecp",
+    "submission": "submissions/eda-env-002-jpeg-ng45-ecp/submission.diff",
+    "sha256": "091109c397ea4ab3fcffacda1fb960c4a5acb4ed6f67ae985a76d23c63a89d03",
+    "reported_gate": 1.0,
+    "reported_reward": 0.893861
+  },
+  {
+    "task": "eda-env-004-aes-asap7-area",
+    "submission": "submissions/eda-env-004-aes-asap7-area/submission.diff",
+    "sha256": "b0e300a2eafe6220f2d5ac2cc02744c0e1fedbbf9f13513ba0699ace52b3a3c2",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-005-ibex-ng45-ecp",
+    "submission": "submissions/eda-env-005-ibex-ng45-ecp/submission.diff",
+    "sha256": "d25cbf8af6c128e3368516b71c939b9fc092b36d8e1a4d3fc3434d6e60dcf1c4",
+    "reported_gate": 1.0,
+    "reported_reward": 0.482385
+  },
+  {
+    "task": "eda-env-008-jpeg-asap7-ecp",
+    "submission": "submissions/eda-env-008-jpeg-asap7-ecp/submission.diff",
+    "sha256": "dca659895bf42f07447c927c21da8b6f6efbf202075565f8ed2ddfd21d4e1e08",
+    "reported_gate": 1.0,
+    "reported_reward": 1.884341
+  },
+  {
+    "task": "eda-env-009-aes-ng45-area",
+    "submission": "submissions/eda-env-009-aes-ng45-area/submission.diff",
+    "sha256": "80c0a092c4c558eefdba0b4431ccba772ba5ac2b241590277d472e63d269d37d",
+    "reported_gate": 1.0,
+    "reported_reward": 61.05695
+  },
+  {
+    "task": "eda-env-011-ibex-asap7-ecp",
+    "submission": "submissions/eda-env-011-ibex-asap7-ecp/submission.diff",
+    "sha256": "e9f2fd48809dab3cdbd8a8463ce5fec94b08ba0a8ffc246da4c46b3d3280f749",
+    "reported_gate": 1.0,
+    "reported_reward": 1.048569
+  },
+  {
+    "task": "eda-env-012-aes-asap7-impl",
+    "submission": "submissions/eda-env-012-aes-asap7-impl/submission.diff",
+    "sha256": "4fe644b163f442a8e14018fe0b8e2e6eaa743f33ef90d42e1535c0b633c7d251",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-013-aes-asap7-close5",
+    "submission": "submissions/eda-env-013-aes-asap7-close5/submission.diff",
+    "sha256": "6ba4316c230efd3e7ec323b3059b13201d30dd477d9418cba803463b8b5d1a70",
+    "reported_gate": 1.0,
+    "reported_reward": 2.822886
+  },
+  {
+    "task": "eda-env-014-aes-asap7-close15",
+    "submission": "submissions/eda-env-014-aes-asap7-close15/submission.diff",
+    "sha256": "64ceef9c034239dd583e7c69b2469956e32ea6e492c7df6f8d15c06e3df2a751",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-016-jpeg-asap7-close5",
+    "submission": "submissions/eda-env-016-jpeg-asap7-close5/submission.diff",
+    "sha256": "c8b34359be035781b013beb314a29e4c035f775f12226ade49827248c2040892",
+    "reported_gate": 1.0,
+    "reported_reward": 1.964917
+  },
+  {
+    "task": "eda-env-017-ibex-asap7-impl",
+    "submission": "submissions/eda-env-017-ibex-asap7-impl/submission.diff",
+    "sha256": "704bb27e2096fa37b7ebc7cc9ce5f1c7ff7e29b0daf475898e0aa790c30cec21",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-018-mult16-asap7-impl",
+    "submission": "submissions/eda-env-018-mult16-asap7-impl/submission.diff",
+    "sha256": "ff578c1adbc65d08fd0629463842b6df9b1c3ef8952515991fd1f73c31d382ca",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-019-elevatorfsm-sky130hd-impl",
+    "submission": "submissions/eda-env-019-elevatorfsm-sky130hd-impl/submission.diff",
+    "sha256": "5ffd62ea8f8481a355f096b7ee4bcc7b1a3e4d7b2135906ed55b06525756bd29",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-020-uart-sky130hd-impl",
+    "submission": "submissions/eda-env-020-uart-sky130hd-impl/submission.diff",
+    "sha256": "6a0567f847a4d4c76534108bea3b0e2a55fa035c7911ccec882c200ff6f15fa4",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-021-systolic-ng45-impl",
+    "submission": "submissions/eda-env-021-systolic-ng45-impl/submission.diff",
+    "sha256": "4aa9553d12652884f4019b6b69d8f6356eb885806b0757b3b8be71a7c80a624a",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-022-tinyriscv-asap7-impl",
+    "submission": "submissions/eda-env-022-tinyriscv-asap7-impl/submission.diff",
+    "sha256": "312d2636d9ebb05a0e9e33b4ba2e294eae31a07eca81dc752232230095e8aacb",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-023-aes-ng45-asap7-port",
+    "submission": "submissions/eda-env-023-aes-ng45-asap7-port/submission.diff",
+    "sha256": "adad659c7f07db5ed65d6a4917b4016f0e7b3c1cd35e0e8bfd0af6a2b44e46d0",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-024-ibex-ng45-asap7-port",
+    "submission": "submissions/eda-env-024-ibex-ng45-asap7-port/submission.diff",
+    "sha256": "bdb3dc59c11da5bb8360bf64f78adf5fb576b52134bdd0a878428fd3824f98a6",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-025-jpeg-ng45-asap7-port",
+    "submission": "submissions/eda-env-025-jpeg-ng45-asap7-port/submission.diff",
+    "sha256": "98fb0f288c7d1fed2d131d876c5c37d115b2ad585ca0b411acf5651a62bdca45",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-026-uart-ng45-sky130hd-port",
+    "submission": "submissions/eda-env-026-uart-ng45-sky130hd-port/submission.diff",
+    "sha256": "eea197102381bc492eee1c0238f25d412af74a7898a1f9fc718f60657a17260a",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-027-aes-asap7-ng45-port",
+    "submission": "submissions/eda-env-027-aes-asap7-ng45-port/submission.diff",
+    "sha256": "5caaf0f99cb1eeb42d185f03fcfab00240b8012a1f265c046856d1146cc93340",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-028-systolic-asap7-ng45-port",
+    "submission": "submissions/eda-env-028-systolic-asap7-ng45-port/submission.diff",
+    "sha256": "19d2fab19b38e441dfd1200e628f83dbab8912fccb2fbc38b994a699ab488dce",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-031-aes-asap7-perfpower",
+    "submission": "submissions/eda-env-031-aes-asap7-perfpower/submission.diff",
+    "sha256": "58c0e820fae487c2580a892c43983eaa2ee1339dd4f574e4a3bb36783feabbe6",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-032-ariane133-ng45-impl",
+    "submission": "submissions/eda-env-032-ariane133-ng45-impl/submission.diff",
+    "sha256": "577e5ffe8282b5400faf5c9f6b3a07f088060bb371ffaf6115597038664bca1c",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-033-aes-asap7-sdcrepair",
+    "submission": "submissions/eda-env-033-aes-asap7-sdcrepair/submission.diff",
+    "sha256": "72903c3b3f5f6109139a6790c4b7bd64e2e5135499f4b8e9ff0d650deb3794fd",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-034-aes-asap7-irrepair",
+    "submission": "submissions/eda-env-034-aes-asap7-irrepair/submission.diff",
+    "sha256": "f63aebd47e51b0638747d9ae4f09727aa7701e289111b04a51edbffcb59a4486",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0,
+    "replay": "submissions/eda-env-034-aes-asap7-irrepair/replay.diff",
+    "replay_sha256": "5847d4b1200c9e19ad4b38a42d889da8013f3d7a5f81360d4fdeb0bd267fc84c",
+    "replay_note": "The original patch adds runner.sh, a convenience wrapper outside the current edit policy. replay.diff omits only that wrapper. All design and flow edits are unchanged."
+  },
+  {
+    "task": "eda-env-035-aes-asap7-flowfix",
+    "submission": "submissions/eda-env-035-aes-asap7-flowfix/submission.diff",
+    "sha256": "4a57da76e7a02e62e088dc24097ef31c568a2001d592ba36e381f8dd0c964215",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-036-ariane133-ng45-macrofix",
+    "submission": "submissions/eda-env-036-ariane133-ng45-macrofix/submission.diff",
+    "sha256": "d603da86481d484a3a7ccbe3ed203c50cd7a62f75bca76f041300e15af5a4ee6",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-037-sboxpipe-asap7-depth",
+    "submission": "submissions/eda-env-037-sboxpipe-asap7-depth/submission.diff",
+    "sha256": "8c3822a0a58f5d7ad933dad39b2ace89b1212878cbd54e900faa32712ec36a9e",
+    "reported_gate": 1.0,
+    "reported_reward": 5.665398
+  },
+  {
+    "task": "eda-env-038-pktstore-ng45-macro",
+    "submission": "submissions/eda-env-038-pktstore-ng45-macro/submission.diff",
+    "sha256": "a3f518d9d78c030236adeb1ca39684375ca5a99db671ffe83fb290ccf47bef22",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-039-aes-asap7-hier",
+    "submission": "submissions/eda-env-039-aes-asap7-hier/submission.diff",
+    "sha256": "2b9befd6aa5cc6d9b3235a69a39d77654e2159072efbc27974c12464150ac20f",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-040-mpb1-asap7-macrofix",
+    "submission": "submissions/eda-env-040-mpb1-asap7-macrofix/submission.diff",
+    "sha256": "e99dbb8332ffc5367b3f1c43f750e41ceabeca77aa6e3affde048e01526e9869",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-041-mpb2-asap7-macrofix",
+    "submission": "submissions/eda-env-041-mpb2-asap7-macrofix/submission.diff",
+    "sha256": "638c73169d4da2d6c26e3cd3458c3defffc21cdcb32cb06d7e686e4e3ea59b1e",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-042-mpb3-asap7-macrofix",
+    "submission": "submissions/eda-env-042-mpb3-asap7-macrofix/submission.diff",
+    "sha256": "08d333d221358e90b6d1a2aa21320902f1c3b9e67f675fd7e53b184cc4843216",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-043-mpb4-asap7-macrofix",
+    "submission": "submissions/eda-env-043-mpb4-asap7-macrofix/submission.diff",
+    "sha256": "80d1f68c6850207e10530ee1f6e8b78f1e45b8d24406803d1cc57fa5d89d3618",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-044-mpb5-asap7-macrofix",
+    "submission": "submissions/eda-env-044-mpb5-asap7-macrofix/submission.diff",
+    "sha256": "458877a8ecf4d1dc73c2ba0e83d475f662181a8db1ef3b691342663442e1b9da",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-045-mpb6-asap7-macrofix",
+    "submission": "submissions/eda-env-045-mpb6-asap7-macrofix/submission.diff",
+    "sha256": "b95c7c4248b2c8835132edfaee19ed99b5ff0b152fba5236d96b1d2a699703f1",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-046-mpb7-asap7-macrofix",
+    "submission": "submissions/eda-env-046-mpb7-asap7-macrofix/submission.diff",
+    "sha256": "3d7136b88e4399779412d93a68bfc03c9f12e7eb89994e5ba9fa6e027e56d1cd",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-047-mpb8-asap7-macrofix",
+    "submission": "submissions/eda-env-047-mpb8-asap7-macrofix/submission.diff",
+    "sha256": "ec969812144d74790604618cf316a721cc3446ece988c37e6b7c2b65ad379dfc",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-048-pktstore-ng45-memcap",
+    "submission": "submissions/eda-env-048-pktstore-ng45-memcap/submission.diff",
+    "sha256": "7f573eb9340e6820139f87ce355525708b4ccd5a4411bdbad971f1453d94badf",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-049-mpb1-asap7-lefmismatch",
+    "submission": "submissions/eda-env-049-mpb1-asap7-lefmismatch/submission.diff",
+    "sha256": "e3d2ec0e3e66af909e2bc211771601195b1d1518d2d3bd91c60de1950c319c50",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-050-mpb1-asap7-nolib",
+    "submission": "submissions/eda-env-050-mpb1-asap7-nolib/submission.diff",
+    "sha256": "83c73ba33b5ed11ad95d00c8ad23145931455e85e1c93dad2a041d50544c0faf",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-051-aes-asap7-badsite",
+    "submission": "submissions/eda-env-051-aes-asap7-badsite/submission.diff",
+    "sha256": "91d930ebf0e3717e058cd7fb462253a95d14e5c3e481b424dae1b1e3a5877724",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-052-aes-asap7-sdcport",
+    "submission": "submissions/eda-env-052-aes-asap7-sdcport/submission.diff",
+    "sha256": "0527e1fbac633d8b81431de678ef5713cb7b6aebc697c3117e21fc85cd39d611",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-053-mpb3-asap7-mplcrash",
+    "submission": "submissions/eda-env-053-mpb3-asap7-mplcrash/submission.diff",
+    "sha256": "620447507169480ea32c703dbeb3e1110863e8f7b54318db5025ba015f5efe23",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-054-aes-asap7-perfarea",
+    "submission": "submissions/eda-env-054-aes-asap7-perfarea/submission.diff",
+    "sha256": "8fd21636870bf84fa6d57fb668f15d1401af7275637ecd136f692191a5bd2833",
+    "reported_gate": 1.0,
+    "reported_reward": 3.226371
+  },
+  {
+    "task": "eda-env-056-aes-asap7-irsevere",
+    "submission": "submissions/eda-env-056-aes-asap7-irsevere/submission.diff",
+    "sha256": "50dbcc911484fbd9583e35c990db3eb5880b11fd65d5a022c3524a85eb069245",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-057-ibex-asap7-irmild",
+    "submission": "submissions/eda-env-057-ibex-asap7-irmild/submission.diff",
+    "sha256": "4c634cd1f3f7b034b1e82828b4808ee57483bc969a3433ebd6dd434e09dac85e",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-058-ibex-asap7-irsevere",
+    "submission": "submissions/eda-env-058-ibex-asap7-irsevere/submission.diff",
+    "sha256": "60370e8cba9f169d9b73e16d996c7a317f99b3d88aa0dba177787b9435213c6d",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-059-ibex-asap7-noclk",
+    "submission": "submissions/eda-env-059-ibex-asap7-noclk/submission.diff",
+    "sha256": "f932695d44928b961af6ca0b047a2b28be1d38087373de5aac4d36511f6757b2",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-060-aes-asap7-noio",
+    "submission": "submissions/eda-env-060-aes-asap7-noio/submission.diff",
+    "sha256": "29af22d33455d2e6c985935fc933ed6dc9bc9767adfe54ac06bd817d6431c9ef",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-061-jpeg-asap7-sdcport",
+    "submission": "submissions/eda-env-061-jpeg-asap7-sdcport/submission.diff",
+    "sha256": "df7c9ac63ae30ccfbca78bef804bfa9deb24f832c197bb2650f5817900d1db7c",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-063-gcd-asap7-tinydie",
+    "submission": "submissions/eda-env-063-gcd-asap7-tinydie/submission.diff",
+    "sha256": "88da90c34e9b3c6f5b69a5c953fc25582f56acd60679efc799b27b4e6ee3eb37",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-064-jpeg-ng45-irmild",
+    "submission": "submissions/eda-env-064-jpeg-ng45-irmild/submission.diff",
+    "sha256": "22d5fa80d19fade5b9e1e8ae9e8316c7d83617117222cf2178572b02006a82db",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-065-jpeg-ng45-irsevere",
+    "submission": "submissions/eda-env-065-jpeg-ng45-irsevere/submission.diff",
+    "sha256": "0d75446a98fd3441ed9951a27b8ff26160447a2a97ccc856e51fc17770b8451e",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-066-systolic-ng45-depth",
+    "submission": "submissions/eda-env-066-systolic-ng45-depth/submission.diff",
+    "sha256": "a774d42eb3f88785e7144d3388e884996202d531f06e0ee5b66e0a9397095465",
+    "reported_gate": 1.0,
+    "reported_reward": 0.705891
+  },
+  {
+    "task": "eda-env-067-ethquad-asap7-hier",
+    "submission": "submissions/eda-env-067-ethquad-asap7-hier/submission.diff",
+    "sha256": "2340473e9f40e2be544b75ab3ef5de2f4ce13b2fa64aa0939ccf1e272724a1e4",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-068-aesround-asap7-depth",
+    "submission": "submissions/eda-env-068-aesround-asap7-depth/submission.diff",
+    "sha256": "bfb1c4d011be6ec8cffe1623d775521075e6b2ea12b609fba956db6cf31a7d33",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-069-sharound-ng45-depth",
+    "submission": "submissions/eda-env-069-sharound-ng45-depth/submission.diff",
+    "sha256": "292b0e28ecd4312485264188a3f98ce7c51ef2826381b5a4a1fd337102823879",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-071-keyvault1-ng45-macro",
+    "submission": "submissions/eda-env-071-keyvault1-ng45-macro/submission.diff",
+    "sha256": "78877b65161ec4aba72c6168185b19bb9bac61b0a464e7e7c77d34cdafdec92a",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0,
+    "replay": "submissions/eda-env-071-keyvault1-ng45-macro/replay.diff",
+    "replay_sha256": "7d248309f8a4c60081305177718f3780f614be7d43c4bfb08816991da482c64e",
+    "replay_note": "The original patch adds runner.sh, a convenience wrapper outside the current edit policy. replay.diff omits only that wrapper. All design and flow edits are unchanged."
+  },
+  {
+    "task": "eda-env-072-keyvault2-ng45-macro",
+    "submission": "submissions/eda-env-072-keyvault2-ng45-macro/submission.diff",
+    "sha256": "c98aee0c1ad5561988c10751e3ac617b2675adfa3bc123132ce89be25b085a27",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-073-ethmac-asap7-xdomain",
+    "submission": "submissions/eda-env-073-ethmac-asap7-xdomain/submission.diff",
+    "sha256": "e8a4fd114f79f3d7a7c273dec2de6bf9050057240ffc85e23daa66966c6820ee",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-074-mult16-asap7-depth",
+    "submission": "submissions/eda-env-074-mult16-asap7-depth/submission.diff",
+    "sha256": "7e7ff07a8ac99931b8f07832fb45eee22c0efbdd6666553e49384ae892392aaf",
+    "reported_gate": 1.0,
+    "reported_reward": 2.490495
+  },
+  {
+    "task": "eda-env-075-adder64-asap7-depth",
+    "submission": "submissions/eda-env-075-adder64-asap7-depth/submission.diff",
+    "sha256": "1e3a832302d8c898755fee6834c7bbf5361cd8b2c3a04f05c7ace8845469c421",
+    "reported_gate": 1.0,
+    "reported_reward": 4.489485
+  },
+  {
+    "task": "eda-env-076-icache1-ng45-macro",
+    "submission": "submissions/eda-env-076-icache1-ng45-macro/submission.diff",
+    "sha256": "c832ad8bb4b2a5ce5f7f39aadad1b330177d0a5f2407e5ed752ea4dc8b264017",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-077-icache2-ng45-macro",
+    "submission": "submissions/eda-env-077-icache2-ng45-macro/submission.diff",
+    "sha256": "11ecd817865dd79591fd035349d049c1d45246e4c707bd86fe3bb569f50638f6",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-078-aes-asap7-routecap",
+    "submission": "submissions/eda-env-078-aes-asap7-routecap/submission.diff",
+    "sha256": "dc4be0ea9ad9abe2687cb92738aff8b7473d2e7a9cb7be0408c16e02c0b9ec7d",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-079-ethmac-asap7-xdomainl3",
+    "submission": "submissions/eda-env-079-ethmac-asap7-xdomainl3/submission.diff",
+    "sha256": "af5b824113b4d3626fc7b592710f7efa4acc0fbb779d1c0f0c74ad7efeb344ee",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-080-swerv-ng45-close5",
+    "submission": "submissions/eda-env-080-swerv-ng45-close5/submission.diff",
+    "sha256": "db42cdc97fec684d2ef4b5984a8db6578ba8bb7da588c0378342eb0d4a7ca877",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-081-mpb1-asap7-chanir",
+    "submission": "submissions/eda-env-081-mpb1-asap7-chanir/submission.diff",
+    "sha256": "8e850418f8c609a046b50c258c04569c7f102a2b2834290216998164a6cbe306",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-082-ariane133-ng45-irmild",
+    "submission": "submissions/eda-env-082-ariane133-ng45-irmild/submission.diff",
+    "sha256": "1a1a47fd18d211da83711004ac5c195a269f14e30ef947a0127d56086804663d",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-083-ariane133-ng45-irsevere",
+    "submission": "submissions/eda-env-083-ariane133-ng45-irsevere/submission.diff",
+    "sha256": "6863ec22e5c59023676cc8c30cb107cf7c9a19b0e20ce3a11cce2c37df42d927",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-084-fir4-asap7-retime",
+    "submission": "submissions/eda-env-084-fir4-asap7-retime/submission.diff",
+    "sha256": "41c9c9bffb6dd58241e30cb168f763a7ae6e65979154005e7600d350530d49c5",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-085-systolic-ng45-perfpower",
+    "submission": "submissions/eda-env-085-systolic-ng45-perfpower/submission.diff",
+    "sha256": "298f2f7683443b92b13ab7be3fed47eb2f0dbc55b71ca71f4f2af5377d7b98fb",
+    "reported_gate": 1.0,
+    "reported_reward": 0.807537
+  },
+  {
+    "task": "eda-env-087-mult16-asap7-close3",
+    "submission": "submissions/eda-env-087-mult16-asap7-close3/submission.diff",
+    "sha256": "10c0d1f8f2b28827768b124fcc15cbd1d819ee209bb647bc41b94664e7c07f57",
+    "reported_gate": 1.0,
+    "reported_reward": 2.161103
+  },
+  {
+    "task": "eda-env-088-scratch1-ng45-macro",
+    "submission": "submissions/eda-env-088-scratch1-ng45-macro/submission.diff",
+    "sha256": "6220c3c853a0bbeb7ab413834144bdca817445246c1f2e1b4fffec72d25e16f9",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-089-scratch2-ng45-macro",
+    "submission": "submissions/eda-env-089-scratch2-ng45-macro/submission.diff",
+    "sha256": "04b0a9e3b93b32f06f15c1c1c54fb35b914423793b51daed22b6eb85ad42ee1c",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  },
+  {
+    "task": "eda-env-090-swerv-ng45-close15",
+    "submission": "submissions/eda-env-090-swerv-ng45-close15/submission.diff",
+    "sha256": "1c0e165df519aaedd82bec8e6797a67bcf02827c611d0a27cc80db56c4bafa41",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-091-swerv-ng45-perfpower",
+    "submission": "submissions/eda-env-091-swerv-ng45-perfpower/submission.diff",
+    "sha256": "30dbf70cc3d3b97503bea90fd74ef1a2e4545a7c5d2699daca4ba3398c611fee",
+    "reported_gate": 1.0,
+    "reported_reward": 0.411919
+  },
+  {
+    "task": "eda-env-092-ethmac-ng45-close5",
+    "submission": "submissions/eda-env-092-ethmac-ng45-close5/submission.diff",
+    "sha256": "4f59e376851d1db574d8afbc55cf426eda57fecefea5a92721b8818d80dfb059",
+    "reported_gate": 1.0,
+    "reported_reward": 0.359832
+  },
+  {
+    "task": "eda-env-093-ethmac-ng45-close15",
+    "submission": "submissions/eda-env-093-ethmac-ng45-close15/submission.diff",
+    "sha256": "17e45920c5b910f780b22934edd2c1d49c7a0d1f3005ba382be3ba1460a96c6d",
+    "reported_gate": 1.0,
+    "reported_reward": 0.355689
+  },
+  {
+    "task": "eda-env-097-aes-asap7-3d",
+    "submission": "submissions/eda-env-097-aes-asap7-3d/submission.diff",
+    "sha256": "7328e34b7cda1b37c6c0b63b890505767c56f7b759db1859c91f4042122d4afa",
+    "reported_gate": 1.0,
+    "reported_reward": 3.051616
+  },
+  {
+    "task": "eda-env-098-systolic-ng45-3d",
+    "submission": "submissions/eda-env-098-systolic-ng45-3d/submission.diff",
+    "sha256": "38cb81a307c9788538f6cd1f2e595f3102f416cdd6232aeb88cea770a9ec2c31",
+    "reported_gate": 0.0,
+    "reported_reward": 0.0
+  },
+  {
+    "task": "eda-env-099-ethquad-asap7-synmacro",
+    "submission": "submissions/eda-env-099-ethquad-asap7-synmacro/submission.diff",
+    "sha256": "848a8ce9776b647a93e5bd5ce84283d4e75eee27e0158ccfcb894423d4ea56ea",
+    "reported_gate": 1.0,
+    "reported_reward": 1.0
+  }
+]

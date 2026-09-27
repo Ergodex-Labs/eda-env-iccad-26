@@ -1,0 +1,9 @@
+{
+ "golden": [
+  "mult16.v"
+ ],
+ "targets": [
+  "src/mult16/mult16.v"
+ ],
+ "top": "mult16"
+}

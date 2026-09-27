@@ -1,0 +1,18 @@
+diff --git a/config.mk b/config.mk
+index 6373960..310147b 100644
+--- a/config.mk
++++ b/config.mk
+@@ -5,3 +5,13 @@ export DESIGN_NAME            = systolic
+ 
+ export VERILOG_FILES = $(WS)/src/systolic/systolic.v
+ export SDC_FILE      = $(WS)/constraint.sdc
++
++# Floorplan: 50% core utilization (required)
++export CORE_UTILIZATION       = 50
++
++# Placement density
++export PLACE_DENSITY_LB_ADDON = 0.20
++
++# Synthesis: repeatable build, let ABC target the clock period from SDC
++export SYNTH_REPEATABLE_BUILD ?= 1
++export TNS_END_PERCENT        = 100

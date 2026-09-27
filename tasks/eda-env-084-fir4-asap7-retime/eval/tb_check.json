@@ -1,0 +1,9 @@
+{
+ "tb": "tb_fir4.v",
+ "frozen": [],
+ "extra": [],
+ "targets": [
+  "src/fir4/fir4.v"
+ ],
+ "top": "tb_fir4"
+}

@@ -1,0 +1,12 @@
+diff --git a/config.mk b/config.mk
+index c2d5565..ac7c067 100644
+--- a/config.mk
++++ b/config.mk
+@@ -16,4 +16,6 @@ export TNS_END_PERCENT          = 100
+ 
+ export SYNTH_USE_SYN            = 1
+ 
+-export FASTROUTE_TCL            = $(WS)/fastroute.tcl
++# Use the platform-default fastroute.tcl (0.25 layer adjustment).
++# The previous workspace fastroute.tcl starved the router with a 0.9
++# adjustment, causing unresolvable congestion (GRT-0116) and DRCs.

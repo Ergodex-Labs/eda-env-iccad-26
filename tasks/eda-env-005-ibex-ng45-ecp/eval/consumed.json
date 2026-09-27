@@ -1,0 +1,11 @@
+{
+  "basenames": [],
+  "defines": [],
+  "top": null,
+  "_logs_parsed": [
+    "1_1_yosys_canonicalize.log",
+    "1_2_yosys.log",
+    "1_synth.log"
+  ],
+  "check_sources": true
+}

@@ -1,0 +1,23 @@
+diff --git a/config.mk b/config.mk
+index 35755e7..bd03029 100644
+--- a/config.mk
++++ b/config.mk
+@@ -6,3 +6,18 @@ export DESIGN_NAME            = tinyriscv
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/tinyriscv/*.v))
+ export VERILOG_INCLUDE_DIRS = $(WS)/src/tinyriscv
+ export SDC_FILE      = $(WS)/constraint.sdc
++
++# Floorplan: 60% core utilization
++export CORE_UTILIZATION       = 60
++export CORE_ASPECT_RATIO      = 1
++export CORE_MARGIN            = 2
++
++# Placement density
++export PLACE_DENSITY_LB_ADDON = 0.20
++
++# Use multiple VT flavors so critical paths can swap to faster (LVT/SLVT) cells
++export ASAP7_USE_VT           = RVT LVT SLVT
++
++# Timing / repair effort
++export TNS_END_PERCENT        = 100
++export SETUP_SLACK_MARGIN     = 20

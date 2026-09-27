@@ -1,0 +1,9 @@
+{
+ "golden": [
+  "systolic_pe.v"
+ ],
+ "targets": [
+  "src/systolic/systolic_pe.v"
+ ],
+ "top": "systolic_pe"
+}

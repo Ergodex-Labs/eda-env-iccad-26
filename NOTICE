@@ -1,0 +1,38 @@
+EDA-env
+Copyright (c) 2026, Ergodex AI, Inc.
+
+The EDA-env code, task definitions, and the design sources that the EDA-env
+authors wrote use the BSD 3-Clause License (see LICENSE).
+
+This repository also contains third-party material. Each item keeps its own
+license. The license text is in the header of the files or at the origin.
+
+1. OpenROAD-flow-scripts (The OpenROAD Project), BSD 3-Clause License
+   https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts (commit fb65d5b48)
+   - flow scripts, original and modified: evaluator/patched/
+   - platform collateral and design configuration files that the task
+     packages copy from flow/platforms/ and flow/designs/
+
+2. ASAP7 predictive process design kit (Arizona State University and Arm),
+   BSD 3-Clause License. Cell and macro views that the ASAP7 tasks copy.
+
+3. Nangate 45 nm Open Cell Library (Nangate / Si2), Nangate Open Cell
+   Library License. Cell and macro views that the Nangate45 tasks copy.
+
+4. SkyWater SKY130 process design kit (SkyWater and Google), Apache License 2.0.
+   Views that the Sky130HD tasks copy.
+
+5. bsg_fakeram memory views (fakeram45_*, fakeram7_*), BSD 3-Clause License
+   https://github.com/bespoke-silicon-group/bsg_fakeram
+   - tasks/*/project/kit/ and the macro views of the memory tasks
+
+6. AES core (Rudolf Usselmann, OpenCores). The license is in the file headers.
+   - tasks/*/project/src/sboxpipe/, tasks/*/project/src/aesround/
+
+7. tinyriscv (Blue Liang), Apache License 2.0
+   https://github.com/liangkangnan/tinyriscv
+   - tasks/*/project/src/tinyriscv/
+
+8. Ethernet MAC 10/100 (Igor Mohor, OpenCores). The ethquad wrapper in
+   tasks/*/project/src/ethquad/ instantiates this core. This repository does
+   not contain the source of the core. The source is in OpenROAD-flow-scripts.

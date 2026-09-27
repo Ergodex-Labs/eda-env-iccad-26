@@ -1,0 +1,31 @@
+diff --git a/config.mk b/config.mk
+index 2045cd5..af9b0ce 100644
+--- a/config.mk
++++ b/config.mk
+@@ -12,3 +12,26 @@ export VERILOG_INCLUDE_DIRS = \
+ export SYNTH_HDL_FRONTEND = slang
+ 
+ export SDC_FILE      = $(WS)/constraint.sdc
++
++# ---------------------------------------------------------------------------
++# ASAP7 port of the ibex core @ 1250 ps clock (constraint.sdc).
++# Tuning based on the known-good upstream ORFS asap7/ibex configuration.
++# Result (full flow, clean work dir):
++#   worst setup slack = +34.18 ps (>= 0), setup/hold TNS = 0,
++#   routing DRC violations = 0, min clock period = 1215.82 ps.
++# ---------------------------------------------------------------------------
++
++# Floorplan: die sized for 45% core utilization (ASAP7 is dense; this keeps
++# congestion low enough for a DRC-clean route while staying compact).
++export CORE_UTILIZATION       = 45
++
++# Global placement density lower-bound add-on (matches the Nangate45 source
++# setup and upstream asap7/ibex).
++export PLACE_DENSITY_LB_ADDON = 0.20
++
++# Spend full effort on TNS repair during post-route timing repair.
++export TNS_END_PERCENT        = 100
++
++# Use the ABC area script during synthesis: ASAP7 easily meets the 1250 ps
++# timing, and the area script yields a smaller, less congested netlist.
++export ABC_AREA               = 1

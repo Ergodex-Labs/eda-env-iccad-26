@@ -1,0 +1,90 @@
+diff --git a/abc.script b/abc.script
+new file mode 100644
+index 0000000..1b5f97d
+--- /dev/null
++++ b/abc.script
+@@ -0,0 +1,49 @@
++# Custom ABC speed script for swerv @ nangate45 (abc_new / GIA path).
++# 7 delay-oriented restructuring rounds (stock abc_speed_gia_only uses 5).
++# This was the sweet spot: cuts logic depth on the deep AOI/OAI reduction
++# chains enough to improve worst setup slack, without the large power cost
++# of a more aggressive (10-round) script.
++&st
++&dch -r
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2 -r
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2 -r
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2 -r
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2 -r
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2 -r
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2 -r
++&nf
++&st
++&syn2
++&if -g -K 6
++&synch2 -r
++&nf
++&put
++buffer -c
++topo
++stime -c
++upsize -c
++dnsize -c
+diff --git a/config.mk b/config.mk
+index dec7e3d..87e1e94 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,9 @@
+-# swerv @ nangate45 — stock in-image recipe (util 65, hierarchical,
+-# arith-operator swap), with the flow SDC moved onto the workspace
+-# edit surface.
++# swerv @ nangate45 — timing-closure tuned recipe.
++# Base: stock in-image recipe (util 65, hierarchical, arith-operator swap),
++# with the flow SDC moved onto the workspace edit surface.
++#
++# Tuning goal: close setup timing at the 2.44 ns evaluation clock with
++# margin, while keeping cell area / power close to the stock recipe.
+ export DESIGN_NAME = swerv
+ export DESIGN_NICKNAME = swerv
+ export PLATFORM    = nangate45
+@@ -17,3 +20,17 @@ export TNS_END_PERCENT        = 100
+ 
+ export SWAP_ARITH_OPERATORS = 1
+ export OPENROAD_HIERARCHICAL = 1
++
++# --- Timing closure knobs -------------------------------------------------
++# Target a tighter clock during synthesis/optimization than the 2.35 ns SDC
++# so the final layout has positive margin at the 2.44 ns evaluation clock.
++# ABC (logic synthesis) aims for this period.
++export ABC_CLOCK_PERIOD_IN_PS = 2280
++# Custom ABC (GIA) mapping script: extra restructuring rounds to cut logic
++# depth on the long AOI/OAI reduction chains that dominate worst setup paths.
++export ABC_GIA_SCRIPT_FILE = $(WS)/abc.script
++# Force the resizer to optimize as if paths had this much less slack, which
++# drives extra buffering/sizing on near-critical paths at every repair step.
++export SETUP_SLACK_MARGIN = 0.10
++# Keep a small hold margin so hold fixing does not undo setup gains.
++export HOLD_SLACK_MARGIN = 0.02

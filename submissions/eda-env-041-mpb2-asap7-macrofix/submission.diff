@@ -1,0 +1,108 @@
+diff --git a/config.mk b/config.mk
+index 365b440..6aa78ae 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,9 @@
+-# mpb_soc2 @ asap7 — F4 given: DEGRADED macro-placement recipe.
+-# Dose: halo 0.1 + util pushed to 72. The flow completes but the layout fails sign-off
+-# (macro crowding -> routing DRCs / timing, per the 036 break class).
++# mpb_soc2 @ asap7 — repaired macro-placement recipe.
++# Fix vs. given degraded recipe (util 73 + halo 0.1 -> macro crowding):
++#  - core utilization back to ~50% on a fixed 102x96 um die
++#  - deterministic two-row macro placement (hooks/mpb2_macro_place.tcl):
++#    6 banks along the bottom (R0) + 6 along the top (R180), M4 pins
++#    snapped to routing tracks, wide channels, std cells get open space.
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NAME            = mpb_soc2
+@@ -12,8 +15,13 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram7_256x32.lef
+ export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/NLDM/fakeram7_256x32.lib
+ 
+-export CORE_UTILIZATION       = 73
+-export CORE_ASPECT_RATIO      = 1
+-export CORE_MARGIN            = 2
+-export MACRO_PLACE_HALO       = 0.1 0.1
++# Fixed die/core: 12 macros (8.36 x 42.0 um each) + tiny std-cell logic.
++# Core area 98.16 x 92.16 um -> core utilization lands near 50%.
++export DIE_AREA               = 0 0 102 96
++export CORE_AREA              = 1.92 1.92 100.08 94.08
++
++# Manual macro placement instead of rtl_macro_placer.
++export MACRO_PLACEMENT_TCL    = $(WS)/hooks/mpb2_macro_place.tcl
++export MACRO_PLACE_HALO       = 2 2
++
+ export TNS_END_PERCENT        = 100
+diff --git a/hooks/mpb2_macro_place.tcl b/hooks/mpb2_macro_place.tcl
+new file mode 100644
+index 0000000..9b3d212
+--- /dev/null
++++ b/hooks/mpb2_macro_place.tcl
+@@ -0,0 +1,67 @@
++# mpb_soc2 manual macro placement — 12 x fakeram7_256x32 (8.36 x 42.0 um).
++#
++# Geometry rationale (die 120x120, core 1.92..118.08):
++#  - All signal pins of fakeram7_256x32 sit on its left edge (x=0, M4),
++#    so every macro is oriented with the pin edge facing the open center.
++#  - 3 macros per edge, snapped to the ASAP7 site grid (0.27 um) and to
++#    the 5.4 um M5 power-stripe grid so the PDN macro grid (2 um halo)
++#    always reaches the macro M4 power rails.
++#  - Macro-to-macro channel on each edge is 10.8 um; edge-to-center
++#    channel is >= 11.6 um. No crowding, wide routing channels.
++#  - Corners of the ring stay clear of the perpendicular macros.
++
++# Collect the 12 macro instances (ODB names are escaped: g_bank\[N\].u_mem),
++# sort them by bank index.
++set block [ord::get_db_block]
++set macros {}
++foreach inst [$block getInsts] {
++  if { [[$inst getMaster] getType] == "BLOCK" } {
++    if { [regexp {g_bank\\\[(\d+)\\\]} [$inst getName] -> idx] } {
++      lappend macros [list $idx $inst]
++    } else {
++      utl::error FLW 1 "unexpected macro instance [$inst getName]"
++    }
++  }
++}
++if { [llength $macros] != 12 } {
++  utl::error FLW 1 "expected 12 macros, found [llength $macros]"
++}
++set macros [lsort -integer -index 0 $macros]
++
++# All macros keep R0/R180 orientation so their horizontal M4 power rails
++# always cross the vertical M5 stripes (the PDN macro grid connects M4-M5
++# only at intersections; R90/R270 would leave rails parallel to M5 and
++# the macro unpowered).
++#
++# Bottom row (y = 2.16):  6 macros, pins face right -> R0
++# Top row    (y = 48.60): 6 macros, pins face left  -> R180
++# x pitch 15.12 um (56 sites) -> 6.8 um macro-to-macro channels
++# (pins on one side of each channel only), wide right-side region and
++# center band for the std-cell logic.
++# Origins are snapped so the M4 signal pins land exactly on M4 routing
++# tracks (y: R0 needs y = 0 mod 0.048, R180 needs y = 0.024 mod 0.048;
++# combined with the 0.27 um site grid -> 2.16 and 48.60).
++# {x y orient} per bank index 0..11
++set placements {
++  { 2.16  2.16  R0}
++  {17.28  2.16  R0}
++  {32.40  2.16  R0}
++  {47.52  2.16  R0}
++  {62.64  2.16  R0}
++  {77.76  2.16  R0}
++  { 2.16 48.60  R180}
++  {17.28 48.60  R180}
++  {32.40 48.60  R180}
++  {47.52 48.60  R180}
++  {62.64 48.60  R180}
++  {77.76 48.60  R180}
++}
++
++foreach m $macros p $placements {
++  lassign $m idx inst
++  lassign $p x y orient
++  $inst setOrient $orient
++  $inst setLocation [ord::microns_to_dbu $x] [ord::microns_to_dbu $y]
++  $inst setPlacementStatus FIRM
++  puts "placed [$inst getName] at ($x, $y) $orient"
++}

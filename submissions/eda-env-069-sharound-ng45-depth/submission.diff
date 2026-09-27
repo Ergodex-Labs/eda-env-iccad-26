@@ -1,0 +1,102 @@
+diff --git a/config.mk b/config.mk
+index c9f1f5d..5597f15 100644
+--- a/config.mk
++++ b/config.mk
+@@ -12,3 +12,20 @@ export CORE_UTILIZATION         = 50
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
+ export TNS_END_PERCENT          = 100
++
++# Timing closure knobs
++export ABC_CLOCK_PERIOD_IN_PS   = 900
++export GPL_TIMING_DRIVEN        = 1
++export GPL_ROUTABILITY_DRIVEN   = 1
++
++# Tighten the clock seen by timing-driven stages (SDC itself is frozen at
++# 1.5 ns; the hooks re-constrain to TIGHT_CLK_PERIOD so the tools push).
++export TIGHT_CLK_PERIOD         = 0.90
++export PRE_GLOBAL_PLACE_TCL     = $(WS)/hooks/tighten_clk.tcl
++export PRE_RESIZE_TCL           = $(WS)/hooks/tighten_clk.tcl
++export PRE_CTS_TCL              = $(WS)/hooks/tighten_clk.tcl
++export PRE_GLOBAL_ROUTE_TCL     = $(WS)/hooks/tighten_clk.tcl
++# Restore the 1.33 ns evaluation clock right after global route so the SDC
++# written for the downstream stages (and 6_final.sdc) uses the eval clock.
++export POST_GLOBAL_ROUTE_TCL    = $(WS)/hooks/restore_clk.tcl
++export PRE_FINAL_REPORT_TCL     = $(WS)/hooks/restore_clk.tcl
+diff --git a/hooks/restore_clk.tcl b/hooks/restore_clk.tcl
+new file mode 100644
+index 0000000..094fe8c
+--- /dev/null
++++ b/hooks/restore_clk.tcl
+@@ -0,0 +1,15 @@
++# Restore the original (frozen) clock constraint for the final report so the
++# reported slack is measured against the real 1.5 ns SDC, while the
++# optimization stages ran against a tighter target. report_clock_min_period
++# still reflects the true achievable period of the layout.
++# Restore to the 1.33 ns evaluation clock so the final report directly shows
++# the setup slack at the evaluation point (the optimization stages ran
++# against a tighter target to push the physical design).
++set clk_port [get_ports clk]
++delete_clock [get_clocks clk]
++create_clock -name clk -period 1.33 $clk_port
++set non_clock_inputs [all_inputs -no_clocks]
++set io_pct 0.2
++set_input_delay  [expr 1.33 * $io_pct] -clock clk $non_clock_inputs
++set_output_delay [expr 1.33 * $io_pct] -clock clk [all_outputs]
++puts "restore_clk: clock period restored to 1.33 ns for final report"
+diff --git a/hooks/tighten_clk.tcl b/hooks/tighten_clk.tcl
+new file mode 100644
+index 0000000..e42acd9
+--- /dev/null
++++ b/hooks/tighten_clk.tcl
+@@ -0,0 +1,17 @@
++# Tighten the clock constraint for timing-driven stages so the tools
++# optimize harder than the (relaxed) 1.5 ns SDC in constraint.sdc.
++# Target period is provided via the TIGHT_CLK_PERIOD env var (ns).
++if { [info exists ::env(TIGHT_CLK_PERIOD)] } {
++  set tp $::env(TIGHT_CLK_PERIOD)
++} else {
++  set tp 1.10
++}
++set clk_port [get_ports clk]
++# Remove existing clock and re-create with tighter period.
++delete_clock [get_clocks clk]
++create_clock -name clk -period $tp $clk_port
++set non_clock_inputs [all_inputs -no_clocks]
++set io_pct 0.2
++set_input_delay  [expr $tp * $io_pct] -clock clk $non_clock_inputs
++set_output_delay [expr $tp * $io_pct] -clock clk [all_outputs]
++puts "tighten_clk: clock period set to $tp ns"
+diff --git a/src/sharound/shacomp.v b/src/sharound/shacomp.v
+index f618540..298e66e 100644
+--- a/src/sharound/shacomp.v
++++ b/src/sharound/shacomp.v
+@@ -1,5 +1,7 @@
+ // shacomp: one SHA-256 compression step (a..h, k, w) -> (a'..h').
+ // GRANTED rewrite surface — must stay combinationally identical.
++// Depth-optimized: a' and d' as independent multi-operand sums so each
++// needs only one carry-save tree + one carry-propagate (no chained CLAs).
+ module shacomp (
+     input  [255:0] state_in,   // {a,b,c,d,e,f,g,h}
+     input  [31:0]  k,
+@@ -14,11 +16,17 @@ module shacomp (
+         input [31:0] x; input [4:0] n;
+         rotr = (x >> n) | (x << (32 - n));
+     endfunction
++
+     wire [31:0] s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+     wire [31:0] ch = (e & f) ^ (~e & g);
+-    wire [31:0] t1 = h + s1 + ch + k + w;
+     wire [31:0] s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+     wire [31:0] mj = (a & b) ^ (a & c) ^ (b & c);
+-    wire [31:0] t2 = s0 + mj;
+-    assign state_out = {t1 + t2, a, b, c, d + t1, e, f, g};
++
++    // a' = t1 + t2 = h + s1 + ch + k + w + s0 + mj   (7 operands)
++    wire [31:0] ap = h + s1 + ch + k + w + s0 + mj;
++
++    // d' = d + t1 = d + h + s1 + ch + k + w          (6 operands)
++    wire [31:0] dp = d + h + s1 + ch + k + w;
++
++    assign state_out = {ap, a, b, c, dp, e, f, g};
+ endmodule

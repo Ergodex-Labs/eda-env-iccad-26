@@ -1,0 +1,15 @@
+diff --git a/config.mk b/config.mk
+index b018b0e..fd85909 100644
+--- a/config.mk
++++ b/config.mk
+@@ -8,6 +8,10 @@ export DESIGN_NAME            = pktstore
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/pktstore/*.v))
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
++# Each spram_256x32 bank is 256x32 = 8192 bits; the platform default cap
++# (4096) makes synthesis reject them. Raise the cap so both banks map to FFs.
++export SYNTH_MEMORY_MAX_BITS    = 16384
++
+ export CORE_UTILIZATION         = 45
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2

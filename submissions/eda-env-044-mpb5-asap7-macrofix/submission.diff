@@ -1,0 +1,91 @@
+diff --git a/config.mk b/config.mk
+index fc39909..7882593 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,7 @@
+-# mpb_soc5 @ asap7 — F4 given: DEGRADED macro-placement recipe.
+-# Dose: halo 0.1 + narrow die kept. The flow completes but the layout fails sign-off
+-# (macro crowding -> routing DRCs / timing, per the 036 break class).
++# mpb_soc5 @ asap7 — REPAIRED macro-placement recipe.
++# Fix vs. degraded baseline: utilization 68 -> 50 (core ~14.5k um^2) and a
++# deterministic 5x4 macro grid with ~5 um routing channels (see
++# flow/scripts/macro_place_util.tcl) instead of rtlmp with a 0.1 um halo.
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NAME            = mpb_soc5
+@@ -12,8 +13,8 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram7_256x32.lef
+ export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/NLDM/fakeram7_256x32.lib
+ 
+-export CORE_UTILIZATION       = 68
+-export CORE_ASPECT_RATIO      = 3
++export CORE_UTILIZATION       = 50
++export CORE_ASPECT_RATIO      = 2.6
+ export CORE_MARGIN            = 2
+-export MACRO_PLACE_HALO       = 0.1 0.1
++export MACRO_PLACE_HALO       = 2 2
+ export TNS_END_PERCENT        = 100
+diff --git a/flow/scripts/macro_place_util.tcl b/flow/scripts/macro_place_util.tcl
+new file mode 100644
+index 0000000..484b265
+--- /dev/null
++++ b/flow/scripts/macro_place_util.tcl
+@@ -0,0 +1,58 @@
++# Custom deterministic macro placement for mpb_soc5 (20 x fakeram7_256x32).
++#
++# Replaces the stock rtl_macro_placer flow (which, given the degraded
++# 0.1 um halo recipe, packed all 20 banks with ~0.2 um gaps -> starved
++# routing channels, illegal std-cell placement in CTS, routing DRCs).
++#
++# Here the 20 banks are arranged in a 5 (col) x 4 (row) grid whose free
++# core space is distributed as uniform routing channels (~5 um) between
++# and around the macros. Every macro is placed at R0 inside the core.
++
++if { [find_macros] != "" } {
++  set block [ord::get_db_block]
++  set core  [$block getCoreArea]
++  set dbu   [$block getDbUnitsPerMicron]
++
++  # Core box in microns.
++  set cx0 [expr {[$core xMin] / double($dbu)}]
++  set cy0 [expr {[$core yMin] / double($dbu)}]
++  set cx1 [expr {[$core xMax] / double($dbu)}]
++  set cy1 [expr {[$core yMax] / double($dbu)}]
++
++  set mw   8.36  ;# fakeram7_256x32 macro width  (um)
++  set mh   42.0  ;# fakeram7_256x32 macro height (um)
++  set cols 5
++  set rows 4
++
++  # Uniform channels: leftover core space split into cols+1 / rows+1 gaps.
++  set gx [expr {($cx1 - $cx0 - $cols * $mw) / ($cols + 1)}]
++  set gy [expr {($cy1 - $cy0 - $rows * $mh) / ($rows + 1)}]
++  puts "macro grid: core \[$cx0,$cy0 $cx1,$cy1\] channel_x=$gx channel_y=$gy"
++
++  # Collect macro instance names (they carry yosys escape backslashes,
++  # e.g. g_bank\[3\].u_mem) and sort them by bank index.
++  set bank_insts {}
++  foreach inst [$block getInsts] {
++    if { [[$inst getMaster] getType] == "BLOCK" } {
++      set nm [$inst getName]
++      if { [regexp {g_bank\\\[(\d+)\\\]} $nm -> idx] } {
++        lappend bank_insts [list $idx $nm]
++      }
++    }
++  }
++  set bank_insts [lsort -integer -index 0 $bank_insts]
++  if { [llength $bank_insts] != 20 } {
++    error "Expected 20 fakeram banks, found [llength $bank_insts]"
++  }
++
++  for {set i 0} {$i < 20} {incr i} {
++    set c  [expr {$i % $cols}]
++    set r  [expr {$i / $cols}]
++    set x  [expr {$cx0 + $gx + $c * ($mw + $gx)}]
++    set y  [expr {$cy0 + $gy + $r * ($mh + $gy)}]
++    set nm [lindex $bank_insts $i 1]
++    place_macro -macro_name $nm -location [list $x $y] -orientation R0
++  }
++} else {
++  puts "No macros found: Skipping macro_placement"
++}

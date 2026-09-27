@@ -1,0 +1,19 @@
+diff --git a/config.mk b/config.mk
+index 2045cd5..de3a0a3 100644
+--- a/config.mk
++++ b/config.mk
+@@ -12,3 +12,14 @@ export VERILOG_INCLUDE_DIRS = \
+ export SYNTH_HDL_FRONTEND = slang
+ 
+ export SDC_FILE      = $(WS)/constraint.sdc
++
++# Floorplan: 60% core utilization
++export CORE_UTILIZATION         = 60
++export CORE_ASPECT_RATIO        = 1
++export CORE_MARGIN              = 2
++
++# Placement density target (platform default is 0.60)
++export PLACE_DENSITY            = 0.60
++
++# Timing effort
++export TNS_END_PERCENT          = 100

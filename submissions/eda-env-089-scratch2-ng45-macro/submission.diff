@@ -1,0 +1,143 @@
+diff --git a/config.mk b/config.mk
+index da95551..9c81b5a 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,8 +1,6 @@
+-# scratch2 @ nangate45 — F5 macro-integration given: a WORKING
+-# macro-less recipe. The banks are behavioral flop
+-# arrays (src/scratch2/spram_256x32.v), so the flow completes as
+-# given, but the memory spec of the task (two fakeram45_256x32
+-# SRAM macros) is not met.
++# scratch2 @ nangate45 — F5 macro-integration: the two banks of
++# spram_256x32 are implemented with the platform SRAM macro
++# fakeram45_256x32 (one macro instance per bank, two in total).
+ export PLATFORM               = nangate45
+ 
+ export DESIGN_NICKNAME        = scratch2
+@@ -11,12 +9,25 @@ export DESIGN_NAME            = scratch2
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/scratch2/*.v))
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-# Each behavioral bank is 8192 bits; the platform default cap (4096)
+-# would refuse to synthesize it. The macro-less recipe is a WORKING
+-# baseline by family contract, so the cap is raised here.
+-export SYNTH_MEMORY_MAX_BITS    = 32768
++# Physical views of the SRAM macro (kit README): the liberty makes
++# synthesis treat fakeram45_256x32 as a black box, the LEF gives
++# placement its physical footprint.
++export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram45_256x32.lef
++export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/fakeram45_256x32.lib
++
++# Floorplan: explicit die/core. The core (260 x 120) fits the two
++# 78.66 x 64.4 macros on the left/right with a central channel for the
++# glue logic; the macro signal pins (metal3, one edge) face that
++# channel. See hooks/macro_placement.tcl.
++export DIE_AREA      = 0 0 264 124
++export CORE_AREA     = 2 2 262 122
++
++# Deterministic manual macro placement (sourced by macro_place_util.tcl;
++# rtl_macro_placer then finds no unfixed macros and skips).
++export MACRO_PLACEMENT_TCL = $(WS)/hooks/macro_placement.tcl
++
++# Keep the default macro halo modest: the macros' signal pins are on a
++# single edge and the design has very little standard-cell logic.
++export MACRO_PLACE_HALO    = 10 10
+ 
+-export CORE_UTILIZATION         = 45
+-export CORE_ASPECT_RATIO        = 1
+-export CORE_MARGIN              = 2
+ export TNS_END_PERCENT          = 100
+diff --git a/hooks/macro_placement.tcl b/hooks/macro_placement.tcl
+new file mode 100644
+index 0000000..cd00be1
+--- /dev/null
++++ b/hooks/macro_placement.tcl
+@@ -0,0 +1,37 @@
++# Manual placement of the two fakeram45_256x32 bank macros.
++#
++# Core is 260 x 120 (see config.mk DIE_AREA/CORE_AREA). The macros are
++# 78.66 x 64.4 with all signal pins on the LEFT edge (metal3) in R0.
++# They are placed on the left/right sides of the core with their pin
++# edges facing the central channel that holds the (tiny) glue logic:
++#
++#   bank0: MY at (20, 27.8)     -> pins on its RIGHT edge (x = 98.66)
++#   bank1: R0 at (161.34, 27.8) -> pins on its LEFT edge (x = 161.34)
++#
++# Instances are located by master name so the script does not depend on
++# post-flattening instance naming.
++
++proc cmp_inst_name { a b } { return [string compare [$a getName] [$b getName]] }
++
++set block [ord::get_db_block]
++set macro_insts {}
++foreach inst [$block getInsts] {
++  if { [[$inst getMaster] getName] eq "fakeram45_256x32" } {
++    lappend macro_insts $inst
++  }
++}
++
++if { [llength $macro_insts] != 2 } {
++  error "Expected exactly 2 fakeram45_256x32 instances, found [llength $macro_insts]"
++}
++
++# Deterministic order: sort by instance name (bank0 before bank1).
++set sorted [lsort -command cmp_inst_name $macro_insts]
++set bank0 [lindex $sorted 0]
++set bank1 [lindex $sorted 1]
++
++puts "Placing macro [$bank0 getName] at (20, 27.8) MY"
++place_macro -macro_name [$bank0 getName] -location {20 27.8} -orientation MY -exact
++
++puts "Placing macro [$bank1 getName] at (161.34, 27.8) R0"
++place_macro -macro_name [$bank1 getName] -location {161.34 27.8} -orientation R0 -exact
+diff --git a/src/scratch2/spram_256x32.v b/src/scratch2/spram_256x32.v
+index 4b59e2f..596530c 100644
+--- a/src/scratch2/spram_256x32.v
++++ b/src/scratch2/spram_256x32.v
+@@ -1,8 +1,16 @@
+-// spram_256x32: single-port synchronous SRAM bank, behavioral.
++// spram_256x32: single-port synchronous SRAM bank, implemented with the
++// platform SRAM macro fakeram45_256x32 (one macro instance per bank).
+ // Port contract (FROZEN — the module interface must not change):
+ //   cs=1, we=1 -> write wdata to addr; rdata holds.
+ //   cs=1, we=0 -> rdata <= mem[addr] (1-cycle read latency).
+ //   cs=0      -> rdata holds; memory unchanged.
++//
++// The macro's control pins are ACTIVE-LOW (see kit/fakeram45_256x32.v):
++//   ce_in=0, we_in=0 -> masked write of wd_in at addr_in; rd_out holds.
++//   ce_in=0, we_in=1 -> rd_out <= mem[addr_in] (1-cycle read latency).
++//   ce_in=1          -> rd_out holds; memory unchanged.
++// Mapping: ce_in = ~cs, we_in = ~we, and a full write mask (the bank
++// contract has no byte enables), which reproduces the contract exactly.
+ module spram_256x32 (
+     input             clk,
+     input             cs,
+@@ -11,14 +19,19 @@ module spram_256x32 (
+     input      [31:0] wdata,
+     output reg [31:0] rdata
+ );
+-    reg [31:0] mem [0:255];
++    wire [31:0] q;
+ 
+-    always @(posedge clk) begin
+-        if (cs) begin
+-            if (we)
+-                mem[addr] <= wdata;
+-            else
+-                rdata <= mem[addr];
+-        end
+-    end
++    // rdata is a reg in the frozen interface; drive it combinationally
++    // from the macro output (identical cycle-level behavior).
++    always @(*) rdata = q;
++
++    fakeram45_256x32 macro_mem (
++        .clk       (clk),
++        .ce_in     (~cs),
++        .we_in     (~we),
++        .addr_in   (addr),
++        .wd_in     (wdata),
++        .w_mask_in (32'hFFFF_FFFF),
++        .rd_out    (q)
++    );
+ endmodule

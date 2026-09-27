@@ -1,0 +1,51 @@
+diff --git a/config.mk b/config.mk
+index 20a6b02..563c201 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,13 +1,11 @@
+-# aes @ asap7 — F9 hierarchical given: a WORKING FLAT recipe. The flow
+-# completes as a single-partition build, but the task mandates the
+-# design be built as blocks (aes_rcon, aes_sbox) implemented through
+-# the flow and assembled at top — the flat result has no block macros.
++# aes @ asap7 — hierarchical build: aes_rcon and aes_sbox are hardened
++# as reusable blocks (recursive make reads block.mk for each) and the
++# top level is assembled with those blocks placed as macros.
+ #
+-# Knob set == the platform's aes-block parent MINUS the hierarchy
+-# variables, so the witness (which restores exactly those variables)
+-# reproduces the feasibility-spike context. Classic HDL frontend
+-# deliberately (run-1c finding: the SYN path width-checks blackboxed
+-# modules against block abstracts that carry PG pins).
++# Hierarchy variables restored from the platform's aes-block reference.
++# Classic HDL frontend deliberately (run-1c finding: the SYN path
++# width-checks blackboxed modules against block abstracts that carry PG
++# pins).
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NAME            = aes_cipher_top
+@@ -21,3 +19,25 @@ export ABC_AREA               = 1
+ export CORE_UTILIZATION       = 47
+ export CORE_ASPECT_RATIO      = 1
+ export CORE_MARGIN            = 2
++
++# Build aes_rcon and aes_sbox through the flow as hard blocks and
++# assemble the top level with them as macros.
++export BLOCKS                 = aes_rcon aes_sbox
++export SYNTH_HIERARCHICAL     = 1
++
++export PLACE_PINS_ARGS = -annealing
++
++# Generous routing at top level
++export MIN_ROUTING_LAYER      = M2
++export MAX_ROUTING_LAYER      = M9
++
++# Ignore power at this exploratory level (skips IR-drop analysis only;
++# the power grid itself is still built and macros connect to it).
++export GND_NETS_VOLTAGES      =
++export PWR_NETS_VOLTAGES      =
++
++# The macros are very small so use a smaller halo
++export MACRO_PLACE_HALO       = 3 3
++
++export ROUTING_LAYER_ADJUSTMENT = 0.3
++export HOLD_SLACK_MARGIN        = -30

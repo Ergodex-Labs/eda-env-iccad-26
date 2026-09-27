@@ -1,0 +1,6 @@
+{
+ "mode": "SCOPED",
+ "scope": [
+  "src/systolic/systolic_pe\\.v"
+ ]
+}

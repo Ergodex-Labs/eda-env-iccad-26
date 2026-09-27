@@ -1,0 +1,107 @@
+diff --git a/config.mk b/config.mk
+index dec7e3d..e7a90ea 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,7 @@
+-# swerv @ nangate45 — stock in-image recipe (util 65, hierarchical,
+-# arith-operator swap), with the flow SDC moved onto the workspace
+-# edit surface.
++# swerv @ nangate45 — timing-closure tuned recipe.
++# Eval clock: 2.44 ns (flow SDC period 2.35 ns, read-only).
++# Goal: WNS >= 0 at eval clock, 0 routing DRC, area within +5%, power within +10%,
++# then minimize effective clock period (period - WNS).
+ export DESIGN_NAME = swerv
+ export DESIGN_NICKNAME = swerv
+ export PLATFORM    = nangate45
+@@ -8,12 +9,36 @@ export PLATFORM    = nangate45
+ export VERILOG_FILES = $(DESIGN_HOME)/src/$(DESIGN_NAME)/swerv_wrapper.sv2v.v
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-export CORE_UTILIZATION = 65
++# --- Floorplan ---
++# Slightly lower utilization than stock 65 to ease congestion/timing/routability.
++export CORE_UTILIZATION = 62
+ export CORE_ASPECT_RATIO = 1
+ export CORE_MARGIN = 5
+ 
++# --- Placement ---
+ export PLACE_DENSITY_LB_ADDON = 0.20
+-export TNS_END_PERCENT        = 100
++# Timing-driven + routability-driven global placement (defaults; keep explicit).
++export GPL_TIMING_DRIVEN = 1
++export GPL_ROUTABILITY_DRIVEN = 1
+ 
++# --- Timing repair effort ---
++# Repair TNS across all paths.
++export TNS_END_PERCENT = 100
++# Over-constrain setup repair so post-route slack at the 2.44 ns eval clock
++# stays >= 0. Applied at CTS + global-route repair (area-efficient stages).
++export SETUP_SLACK_MARGIN = 0.10
++export HOLD_SLACK_MARGIN = 0.05
++# Recover area/power on non-critical paths once setup is met.
++export RECOVER_POWER = 20
++
++# --- Synthesis ---
+ export SWAP_ARITH_OPERATORS = 1
+ export OPENROAD_HIERARCHICAL = 1
++
++# --- Routing ---
++# Leave more track headroom to reduce congestion-driven detours (timing + DRC).
++export ROUTING_LAYER_ADJUSTMENT = 0.4
++
++# Tighter synthesis delay target (ps) so ABC maps the netlist for more speed.
++# The flow SDC stays 2.35 ns; this only drives ABC's -D delay goal.
++export ABC_CLOCK_PERIOD_IN_PS = 2250
+diff --git a/flow/scripts/resize.tcl b/flow/scripts/resize.tcl
+new file mode 100644
+index 0000000..73321e7
+--- /dev/null
++++ b/flow/scripts/resize.tcl
+@@ -0,0 +1,47 @@
++utl::set_metrics_stage "placeopt__{}"
++source $::env(SCRIPTS_DIR)/load.tcl
++erase_non_stage_variables place
++load_design 3_3_place_gp.odb 2_floorplan.sdc
++source_step_tcl PRE RESIZE
++
++log_cmd estimate_parasitics -placement
++
++set instance_count_before [sta::network_leaf_instance_count]
++set pin_count_before [sta::network_leaf_pin_count]
++
++set_dont_use $::env(DONT_USE_CELLS)
++
++if { [env_var_exists_and_non_empty EARLY_SIZING_CAP_RATIO] } {
++  log_cmd set_opt_config -set_early_sizing_cap_ratio $env(EARLY_SIZING_CAP_RATIO)
++}
++
++if { [env_var_exists_and_non_empty SWAP_ARITH_OPERATORS] } {
++  # Enable sanity checker until replace_arith_modules becomes stable
++  set_debug_level ODB replace_design_check_sanity 1
++  replace_arith_modules
++  global_placement -incremental
++}
++
++repair_design_helper
++
++if { $::env(ENABLE_PLACE_REPAIR_TIMING) } {
++  # Repair timing using placement parasitics.
++  puts "Repair setup and hold violations..."
++  log_cmd estimate_parasitics -placement
++
++  repair_timing_helper
++}
++
++# post report
++
++puts "Floating nets: "
++report_floating_nets
++
++report_metrics 3 "resizer" true false
++
++puts "Instance count before $instance_count_before, after [sta::network_leaf_instance_count]"
++puts "Pin count before $pin_count_before, after [sta::network_leaf_pin_count]"
++
++source_step_tcl POST RESIZE
++
++orfs_write_db $::env(RESULTS_DIR)/3_4_place_resized.odb

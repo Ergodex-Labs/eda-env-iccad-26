@@ -1,0 +1,33 @@
+diff --git a/config.mk b/config.mk
+index 2122e7d..dfbcb71 100644
+--- a/config.mk
++++ b/config.mk
+@@ -13,3 +13,6 @@ export CORE_MARGIN              = 2
+ export PLACE_DENSITY            = 0.55
+ export TNS_END_PERCENT          = 100
+ 
++# Optimize with extra setup margin so post-route slack stays >= 0
++export SETUP_SLACK_MARGIN       = 30
++
+diff --git a/constraint.sdc b/constraint.sdc
+index 70ec8eb..7444c24 100644
+--- a/constraint.sdc
++++ b/constraint.sdc
+@@ -1,7 +1,17 @@
+ set clk_name clk
+ set clk_port_name clk
+ set clk_period 410
++set clk_io_pct 0.2
+ 
+ set clk_port [get_ports $clk_port_name]
+ 
+ create_clock -name $clk_name -period $clk_period $clk_port
++set clk_io_name vclk_$clk_name
++create_clock -name $clk_io_name -period $clk_period
++set_clock_latency 77.930 [get_clocks $clk_name]
++set_clock_latency 77.930 [get_clocks $clk_io_name]
++
++set non_clock_inputs [all_inputs -no_clocks]
++
++set_input_delay [expr $clk_period * $clk_io_pct] -clock $clk_io_name $non_clock_inputs
++set_output_delay [expr $clk_period * $clk_io_pct] -clock $clk_io_name [all_outputs]

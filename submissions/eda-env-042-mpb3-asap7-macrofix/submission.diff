@@ -1,0 +1,236 @@
+diff --git a/config.mk b/config.mk
+index 25b6424..85ac995 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,17 @@
+-# mpb_soc3 @ asap7 — F4 given: DEGRADED macro-placement recipe.
+-# Dose: halo 0.1 + util pushed to 75. The flow completes but the layout fails sign-off
+-# (macro crowding -> routing DRCs / timing, per the 036 break class).
++# mpb_soc3 @ asap7 — repaired macro-placement recipe.
++# Fix for the degraded F4 recipe (halo 0.1 + util 75 -> macro crowding,
++# starved routing channels, sign-off DRC/timing failures):
++#   * core utilization back to ~50% (explicit DIE/CORE area; measured
++#     50.2% at finish)
++#   * deterministic 8x3 macro grid via flow/scripts/macro_place.tcl:
++#     facing-pin column pairs [MY|R0]. The 3.95 um pin channels are kept
++#     row-free (cut_rows halo 2 um/side), so no M1/M2 followpin rails or
++#     PDN via stacks obstruct macro pin access; std cells live in the wide
++#     (11.3 um) back-to-back gaps.
++#   * custom PDN stage (flow/scripts/pdn.tcl): M5 stripe pitch 10.8 with
++#     offset chosen so no M5 stripe falls inside any pin channel and every
++#     macro pin edge keeps >= 1.1 um clearance to the nearest stripe (the
++#     V4 pin-access vias must not short the power stripes).
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NAME            = mpb_soc3
+@@ -12,8 +23,14 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram7_256x32.lef
+ export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/NLDM/fakeram7_256x32.lib
+ 
+-export CORE_UTILIZATION       = 75
+-export CORE_ASPECT_RATIO      = 1
++# Floorplan: explicit areas. Cell area ~8872 um^2 (24 x 351.12 macro +
++# std) on a 128.358 x 137.97 = 17712 um^2 core -> ~50% core utilization.
++export DIE_AREA               = 0 0 132.358 141.97
++export CORE_AREA              = 2 2 130.358 139.97
+ export CORE_MARGIN            = 2
+-export MACRO_PLACE_HALO       = 0.1 0.1
++
++# Generous halo (only used on the RTLMP path; the deterministic grid in
++# flow/scripts/macro_place.tcl already guarantees the real channels).
++export MACRO_PLACE_HALO       = 4 4
++
+ export TNS_END_PERCENT        = 100
+diff --git a/flow/scripts/macro_place.tcl b/flow/scripts/macro_place.tcl
+new file mode 100644
+index 0000000..c0400a3
+--- /dev/null
++++ b/flow/scripts/macro_place.tcl
+@@ -0,0 +1,104 @@
++# Custom macro placement for mpb_soc3 (24x fakeram7_256x32 on ASAP7).
++#
++# Deterministic grid placement: 8 columns x 3 rows. Columns are paired
++# [MY | R0] so that the M4 pin edges (west side of the macro in R0) face
++# each other across a shared vertical routing channel. Back-to-back pairs
++# are spaced wider than the PDN macro-grid halo (2.0 um per side).
++#
++# Geometry (um), core = 128.358 x 137.97 (origin 2,2):
++#   pair pitch x : 31.968 = 8.36 (MY) + 3.952 (pin channel) + 8.36 (R0)
++#                         + 11.296 (back-to-back gap, std cells live here).
++#                         31.968 um = 666 M5-track pitches (0.048) = 592
++#                         site pitches (0.054), so all columns share one
++#                         routing-track phase and every edge-abutment M4
++#                         pin has an M5 track inside DRT's V4 via window.
++#                         The 3.952 um pin channel is fully row-free
++#                         (cut_rows halo 2 um/side), so macro pin access on
++#                         M4/M3/M5 is unobstructed by rails/via stacks.
++#   row pitch y  : 45.36  = 42.00 + 3.36 (horizontal routing channel)
++# All origins snapped to the site grid (0.054 x 0.27). NOTE: for MY
++# orientation ODB setOrigin places the master origin, so the bbox extends
++# WEST of the origin (origin_x = bbox_xmin + 8.36).
++
++source $::env(SCRIPTS_DIR)/load.tcl
++erase_non_stage_variables floorplan
++load_design 2_1_floorplan.odb 2_1_floorplan.sdc
++source_step_tcl PRE MACRO_PLACE
++
++if { [find_macros] != "" } {
++  set db [ord::get_db]
++  set block [ord::get_db_block]
++
++  # Collect the 24 bank macros and sort them by bank index. ODB instance
++  # names keep the verilog escaping (g_bank\[N\].u_mem), so match with
++  # regexp instead of exact-name lookup.
++  set banks {}
++  foreach inst [$block getInsts] {
++    set name [$inst getName]
++    if {[regexp {g_bank\\\[(\d+)\\\]\.u_mem} $name -> bank_idx]} {
++      lappend banks [list $bank_idx $inst]
++    }
++  }
++  set banks [lsort -integer -index 0 $banks]
++  if {[llength $banks] != 24} {
++    utl::error FLW 1 "Expected 24 bank macros, found [llength $banks]"
++  }
++
++  # Macro: fakeram7_256x32, 8.36 x 42.0, all signal pins on west edge (M4).
++  # CRITICAL x-alignment: DRT can only drop a V4 via on the 24 nm edge-
++  # abutment M4 pins if an M5 signal track (x = 12 mod 48 nm) falls inside
++  # the ~24 nm viable window next to the pin edge. pair_pitch = 31.968 um
++  # = 666 M5-track pitches = 592 site pitches, so every column keeps the
++  # same proven track phase: MY pin edges = 8 mod 48, R0 pin edges = 24
++  # mod 48 (both have an M5 track inside the via window).
++  #   pair pitch 31.968 = 8.36 (MY) + 3.952 (pin channel) + 8.36 (R0)
++  #                     + 11.296 (back-to-back gap, holds the std cells)
++  #   row pitch  45.36  = 42.00 + 3.36 (horizontal routing channel)
++  set pair_pitch 31.968
++  set r0_offset  12.312
++  set x0         7.776
++  set row_pitch  45.36
++  set y0         4.70
++
++  proc snap {v grid} { return [expr {$grid * round($v / $grid)}] }
++
++  set idx 0
++  for {set row 0} {$row < 3} {incr row} {
++    set y [snap [expr {$y0 + $row * $row_pitch}] 0.27]
++    for {set pair 0} {$pair < 4} {incr pair} {
++      set px [expr {$x0 + $pair * $pair_pitch}]
++      # left macro of pair: MY (pins face east, into the channel)
++      set x_my [snap $px 0.054]
++      # right macro of pair: R0 (pins face west, into the channel)
++      set x_r0 [snap [expr {$px + $r0_offset}] 0.054]
++      # ODB setOrigin positions the master origin (0,0); for MY the master
++      # is mirrored about its local Y axis, so the bbox extends WEST of the
++      # origin: origin_x = bbox_xmin + macro_width.
++      set macro_w 8.36
++      foreach {slot x orient} [list $idx $x_my "MY" \
++                                   [expr {$idx + 1}] $x_r0 "R0"] {
++        set inst [lindex $banks $slot 1]
++        set ox $x
++        if {$orient eq "MY"} {
++          set ox [expr {$x + $macro_w}]
++        }
++        set dbx [ord::microns_to_dbu $ox]
++        set dby [ord::microns_to_dbu $y]
++        $inst setOrient $orient
++        $inst setOrigin $dbx $dby
++        $inst setPlacementStatus FIRM
++        puts "Placed [$inst getName] bbox_xmin=$x origin_x=$ox y=$y orient $orient"
++      }
++      incr idx 2
++    }
++  }
++} else {
++  puts "No macros found: Skipping macro_placement"
++}
++
++source_step_tcl POST MACRO_PLACE
++
++report_design_area
++
++orfs_write_db $::env(RESULTS_DIR)/2_2_floorplan_macro.odb
++write_macro_placement $::env(RESULTS_DIR)/2_2_floorplan_macro.tcl
+diff --git a/flow/scripts/pdn.tcl b/flow/scripts/pdn.tcl
+new file mode 100644
+index 0000000..37f338e
+--- /dev/null
++++ b/flow/scripts/pdn.tcl
+@@ -0,0 +1,77 @@
++# Custom PDN stage for mpb_soc3 @ ASAP7 (24x fakeram7_256x32).
++# Same as the image pdn.tcl, but sources an inline grid strategy (below)
++# instead of $PDN_TCL.
++#
++# The strategy is identical to the platform
++# grid_strategy-M1-M2-M5-M6.tcl EXCEPT the M5 stripe pitch/offset:
++# pitch 5.4 -> 10.8, offset 0.300 -> 0.556.
++#
++# Why: the deterministic macro grid (flow/scripts/macro_place.tcl) uses
++# narrow (3.95 um), row-free vertical pin channels. The V4 via that DRT
++# drops on each edge-abutment M4 macro pin lands on an M5 signal track
++# right at the pin edge; if a PDN M5 stripe pair passes within ~1 um of
++# that track, the via shorts the stripe (persistent DRC violations) or
++# pin access fails outright (DRT-0255). With pitch 10.8 and this offset,
++# no M5 stripe falls inside any pin channel and every macro pin edge
++# keeps >= 1.1 um clearance to the nearest stripe. Every macro still has
++# at least one stripe pair within its 2.0 um macro-grid halo window
++# (12.36 > 10.49 um max pair gap), so macro power hookup is preserved.
++
++source $::env(SCRIPTS_DIR)/load.tcl
++erase_non_stage_variables floorplan
++load_design 2_3_floorplan_tapcell.odb 2_1_floorplan.sdc
++source_step_tcl PRE PDN
++
++####################################
++# global connections
++####################################
++add_global_connection -net {VDD} -inst_pattern {.*} -pin_pattern {^VDD$} -power
++add_global_connection -net {VDD} -inst_pattern {.*} -pin_pattern {^VDDPE$}
++add_global_connection -net {VDD} -inst_pattern {.*} -pin_pattern {^VDDCE$}
++add_global_connection -net {VSS} -inst_pattern {.*} -pin_pattern {^VSS$} -ground
++add_global_connection -net {VSS} -inst_pattern {.*} -pin_pattern {^VSSE$}
++global_connect
++####################################
++# voltage domains
++####################################
++set_voltage_domain -name {CORE} -power {VDD} -ground {VSS}
++####################################
++# standard cell grid
++####################################
++define_pdn_grid -name {top} -voltage_domains {CORE} -pins {M6}
++add_pdn_stripe -grid {top} -layer {M1} -width {0.018} -pitch {0.54} -offset {0} -followpins
++add_pdn_stripe -grid {top} -layer {M2} -width {0.018} -pitch {0.54} -offset {0} -followpins
++add_pdn_stripe -grid {top} -layer {M5} -width {0.12} -spacing {0.072} -pitch {10.8} -offset {0.556}
++add_pdn_stripe -grid {top} -layer {M6} -width {0.288} -spacing {0.096} -pitch {5.4} -offset {0.513}
++add_pdn_connect -grid {top} -layers {M1 M2}
++add_pdn_connect -grid {top} -layers {M2 M5}
++add_pdn_connect -grid {top} -layers {M5 M6}
++####################################
++# macro grids
++####################################
++define_pdn_grid -name {CORE_macro_grid_1} -voltage_domains {CORE} -macro \
++  -orient {R0 R180 MX MY} -halo {2.0 2.0 2.0 2.0} -default
++add_pdn_connect -grid {CORE_macro_grid_1} -layers {M4 M5}
++
++define_pdn_grid -name {CORE_macro_grid_2} -voltage_domains {CORE} -macro \
++  -orient {R90 R270 MXR90 MYR90} -halo {2.0 2.0 2.0 2.0} -default
++add_pdn_connect -grid {CORE_macro_grid_2} -layers {M4 M5}
++
++pdngen
++
++source_step_tcl POST PDN
++
++# Check all supply nets
++set block [ord::get_db_block]
++foreach net [$block getNets] {
++  set type [$net getSigType]
++  if { $type == "POWER" || $type == "GROUND" } {
++    # Temporarily disable due to CI issues
++    #        puts "Check supply: [$net getName]"
++    #        check_power_grid -net [$net getName]
++  }
++}
++
++report_design_area
++
++orfs_write_db $::env(RESULTS_DIR)/2_4_floorplan_pdn.odb

@@ -1,0 +1,36 @@
+diff --git a/config.mk b/config.mk
+index 3ead834..c5ffbd7 100644
+--- a/config.mk
++++ b/config.mk
+@@ -12,7 +12,18 @@ export SYNTH_HDL_FRONTEND = slang
+ 
+ export SDC_FILE      = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NICKNAME)/constraint.sdc
+ 
+-export CORE_UTILIZATION ?= 50
++export CORE_UTILIZATION ?= 45
+ export PLACE_DENSITY_LB_ADDON = 0.20
+ export TNS_END_PERCENT        = 100
+ 
++# --- ECP tuning ---
++# Make ABC map for a tighter-than-SDC delay target so the synthesized
++# netlist is faster; sign-off clock stays 2.2ns -> positive slack.
++export ABC_CLOCK_PERIOD_IN_PS = 1.35
++# Over-fix setup during timing repair to bank positive slack.
++export SETUP_SLACK_MARGIN     = 0.20
++# Repair timing during placement resize (pre-CTS) using placement parasitics.
++export ENABLE_PLACE_REPAIR_TIMING = 1
++# Diagnostic: dump worst setup path at sign-off.
++export POST_FINAL_REPORT_TCL = $(WS)/hooks/report_worst_path.tcl
++
+diff --git a/hooks/report_worst_path.tcl b/hooks/report_worst_path.tcl
+new file mode 100644
+index 0000000..6a1de47
+--- /dev/null
++++ b/hooks/report_worst_path.tcl
+@@ -0,0 +1,6 @@
++# Diagnostic: dump the worst setup path at sign-off to understand the bottleneck.
++puts "=== WORST SETUP PATH (sign-off) ==="
++report_checks -path_delay max -format full_clock_expanded -group_count 3 \
++  > $::env(REPORTS_DIR)/worst_setup_path.rpt
++report_checks -path_delay max -group_count 1
++puts "=== END WORST SETUP PATH ==="

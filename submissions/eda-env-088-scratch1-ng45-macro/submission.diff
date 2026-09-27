@@ -1,0 +1,83 @@
+diff --git a/config.mk b/config.mk
+index e99dd88..e92a032 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,8 +1,6 @@
+-# scratch1 @ nangate45 — F5 macro-integration given: a WORKING
+-# macro-less recipe. The bank is behavioral flop
+-# array (src/scratch1/spram_256x32.v), so the flow completes as
+-# given, but the memory spec of the task (one fakeram45_256x32
+-# SRAM macro) is not met.
++# scratch1 @ nangate45 — F5 macro-integration: the bank storage is the
++# platform SRAM macro fakeram45_256x32 (one instance, wrapped by
++# src/scratch1/spram_256x32.v with active-low control adaptation).
+ export PLATFORM               = nangate45
+ 
+ export DESIGN_NICKNAME        = scratch1
+@@ -11,12 +9,19 @@ export DESIGN_NAME            = scratch1
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/scratch1/*.v))
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-# Each behavioral bank is 8192 bits; the platform default cap (4096)
+-# would refuse to synthesize it. The macro-less recipe is a WORKING
+-# baseline by family contract, so the cap is raised here.
+-export SYNTH_MEMORY_MAX_BITS    = 32768
++# Physical views of the SRAM macro (kit README): the liberty file makes
++# synthesis treat fakeram45_256x32 as a black box, the LEF gives
++# placement its physical footprint.
++export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram45_256x32.lef
++export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/fakeram45_256x32.lib
+ 
+-export CORE_UTILIZATION         = 45
++# Floorplan: the macro is ~78.7 x 64.4 um (~5066 um^2). Keep utilization
++# low so the macro plus the small glue logic fit with room to route.
++export CORE_UTILIZATION         = 30
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
++
++# Halo around the macro for pin access / routing.
++export MACRO_PLACE_HALO         = 10 10
++
+ export TNS_END_PERCENT          = 100
+diff --git a/src/scratch1/spram_256x32.v b/src/scratch1/spram_256x32.v
+index 4b59e2f..953850f 100644
+--- a/src/scratch1/spram_256x32.v
++++ b/src/scratch1/spram_256x32.v
+@@ -3,6 +3,13 @@
+ //   cs=1, we=1 -> write wdata to addr; rdata holds.
+ //   cs=1, we=0 -> rdata <= mem[addr] (1-cycle read latency).
+ //   cs=0      -> rdata holds; memory unchanged.
++//
++// Implementation: one fakeram45_256x32 platform macro instance.
++// The macro's control pins are ACTIVE-LOW (see kit/fakeram45_256x32.v):
++//   ce_in=0, we_in=0 -> masked write of wd_in at addr_in; rd_out holds.
++//   ce_in=0, we_in=1 -> rd_out <= mem[addr_in] (1-cycle read latency).
++//   ce_in=1          -> rd_out holds; memory unchanged.
++// Mapping: ce_in = ~cs, we_in = ~we, w_mask_in = all-ones (full write).
+ module spram_256x32 (
+     input             clk,
+     input             cs,
+@@ -11,14 +18,13 @@ module spram_256x32 (
+     input      [31:0] wdata,
+     output reg [31:0] rdata
+ );
+-    reg [31:0] mem [0:255];
+-
+-    always @(posedge clk) begin
+-        if (cs) begin
+-            if (we)
+-                mem[addr] <= wdata;
+-            else
+-                rdata <= mem[addr];
+-        end
+-    end
++    fakeram45_256x32 macro0 (
++        .clk       (clk),
++        .ce_in     (~cs),
++        .we_in     (~we),
++        .addr_in   (addr),
++        .wd_in     (wdata),
++        .w_mask_in (32'hFFFFFFFF),
++        .rd_out    (rdata)
++    );
+ endmodule

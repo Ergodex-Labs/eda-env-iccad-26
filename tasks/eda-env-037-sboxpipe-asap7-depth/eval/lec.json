@@ -1,0 +1,9 @@
+{
+ "golden": [
+  "aes_sbox.v"
+ ],
+ "targets": [
+  "src/sboxpipe/aes_sbox.v"
+ ],
+ "top": "aes_sbox"
+}

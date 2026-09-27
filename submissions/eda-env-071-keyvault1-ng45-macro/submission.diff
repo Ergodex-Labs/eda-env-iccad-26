@@ -1,0 +1,117 @@
+diff --git a/config.mk b/config.mk
+index 1186054..e2d5142 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,8 +1,8 @@
+-# keyvault1 @ nangate45 — F5 macro-integration given: a WORKING
+-# macro-less recipe. The bank is a behavioral flop array
+-# (src/keyvault1/spram_256x32.v), so the flow completes as given, but
+-# the memory spec of the task (one fakeram45_256x32 SRAM
+-# macro) is not met.
++# keyvault1 @ nangate45 — F5 macro-integration: the storage bank
++# (src/keyvault1/spram_256x32.v) is now a thin wrapper around ONE
++# fakeram45_256x32 SRAM macro. The macro's physical views are declared
++# below so synthesis treats it as a black box (liberty) and placement
++# gets its physical footprint (LEF).
+ export PLATFORM               = nangate45
+ 
+ export DESIGN_NICKNAME        = keyvault1
+@@ -11,12 +11,25 @@ export DESIGN_NAME            = keyvault1
+ export VERILOG_FILES = $(sort $(wildcard $(WS)/src/keyvault1/*.v))
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
+-# Each behavioral bank is 8192 bits; the platform default cap (4096)
+-# would refuse to synthesize it. The macro-less recipe is a WORKING
+-# baseline by family contract, so the cap is raised here.
+-export SYNTH_MEMORY_MAX_BITS    = 32768
++# Macro kit physical views (named in kit/README.md). The liberty makes
++# synthesis treat fakeram45_256x32 as a black box; the LEF gives
++# placement its footprint and pin shapes.
++export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram45_256x32.lef
++export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/fakeram45_256x32.lib
+ 
+-export CORE_UTILIZATION         = 45
++# The bank is no longer a behavioral flop array, so no large behavioral
++# memory is synthesized. Keep the cap at the platform default by not
++# raising it (the macro is a black box, not inferred memory).
++
++# Floorplan: the macro is 78.66 x 64.4 um and needs room plus a halo.
++# A modest utilization with a square aspect ratio gives the placer a
++# die large enough to legalize the single macro alongside the tiny FSM.
++export CORE_UTILIZATION         = 30
+ export CORE_ASPECT_RATIO        = 1
+ export CORE_MARGIN              = 2
++
++# Keep the macro away from the core edge so its pins are reachable and
++# the power grid can wrap around it.
++export MACRO_PLACE_HALO         = 10 10
++
+ export TNS_END_PERCENT          = 100
+diff --git a/runner.sh b/runner.sh
+new file mode 100755
+index 0000000..393f2df
+--- /dev/null
++++ b/runner.sh
+@@ -0,0 +1,12 @@
++#!/bin/bash
++# runner.sh — convenience wrapper to run the ORFS flow for keyvault1.
++# The flow reads /workspace/config.mk plus any stage-script copies under
++# /workspace/flow/scripts/ and hook Tcl files under /workspace/hooks/.
++# Flow outputs land under /tmp/orfs-work (never in /workspace).
++#
++# Usage:
++#   ./runner.sh            # run the full flow (default target: finish)
++#   ./runner.sh synth      # run only synthesis
++#   ./runner.sh floorplan  # run through floorplan
++set -euo pipefail
++exec orfs-agent-run "${@:-finish}"
+diff --git a/src/keyvault1/spram_256x32.v b/src/keyvault1/spram_256x32.v
+index 4b59e2f..037a526 100644
+--- a/src/keyvault1/spram_256x32.v
++++ b/src/keyvault1/spram_256x32.v
+@@ -1,24 +1,33 @@
+-// spram_256x32: single-port synchronous SRAM bank, behavioral.
++// spram_256x32: single-port synchronous SRAM bank.
+ // Port contract (FROZEN — the module interface must not change):
+ //   cs=1, we=1 -> write wdata to addr; rdata holds.
+ //   cs=1, we=0 -> rdata <= mem[addr] (1-cycle read latency).
+ //   cs=0      -> rdata holds; memory unchanged.
++//
++// Implementation: one fakeram45_256x32 SRAM macro (the platform's
++// Nangate45 macro). The macro's control pins are ACTIVE-LOW, so the
++// active-high cs/we of this bank are inverted locally:
++//   ce_in = ~cs   (chip enable, active low)
++//   we_in = ~we   (write enable, active low)
++// Writes use the full write mask (w_mask_in = all-ones), so a masked
++// macro write of wdata reproduces a plain 32-bit write. Reads keep the
++// macro's native 1-cycle latency, and rd_out holds while ce_in=1,
++// matching the contract above cycle for cycle.
+ module spram_256x32 (
+     input             clk,
+     input             cs,
+     input             we,
+     input      [7:0]  addr,
+     input      [31:0] wdata,
+-    output reg [31:0] rdata
++    output     [31:0] rdata
+ );
+-    reg [31:0] mem [0:255];
+-
+-    always @(posedge clk) begin
+-        if (cs) begin
+-            if (we)
+-                mem[addr] <= wdata;
+-            else
+-                rdata <= mem[addr];
+-        end
+-    end
++    fakeram45_256x32 macro_mem_0 (
++        .clk       (clk),
++        .ce_in     (~cs),
++        .we_in     (~we),
++        .addr_in   (addr),
++        .wd_in     (wdata),
++        .w_mask_in (32'hFFFFFFFF),
++        .rd_out    (rdata)
++    );
+ endmodule

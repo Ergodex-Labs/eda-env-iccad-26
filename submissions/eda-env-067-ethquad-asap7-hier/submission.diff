@@ -1,0 +1,117 @@
+diff --git a/block.mk b/block.mk
+index 7fe87c6..066627b 100644
+--- a/block.mk
++++ b/block.mk
+@@ -1,4 +1,7 @@
+-# Shared child config for the block build (ORFS BLOCKS convention).
++# Shared child config for the ethmac block build (ORFS BLOCKS convention).
++# The recursive block build runs with DESIGN_NAME=ethmac,
++# DESIGN_NICKNAME=ethquad_ethmac and produces the reusable hardened
++# macro (LEF + liberty) that the ethquad top level instantiates 4 times.
+ export PLATFORM               = asap7
+ 
+ export VERILOG_FILES = $(sort $(wildcard ./designs/src/ethmac/*.v))
+@@ -11,8 +14,14 @@ export PLACE_DENSITY          = 0.60
+ 
+ export ABC_AREA               = 1
+ 
+-export MAX_ROUTING_LAYER      = M5
++# The top level routes above the block on M6+; keep block-internal
++# routing at M5 and below so the block pins stay accessible.
++export MAX_ROUTING_LAYER      ?= M5
+ 
+ export PLACE_PINS_ARGS = -annealing
+ 
++# Abstract (LEF) timing is pessimistic; give hold fixing some margin so
++# the hardened block also closes when assembled at the top level.
++export HOLD_SLACK_MARGIN      = -10
++
+ export PDN_TCL                = $(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl
+diff --git a/config.mk b/config.mk
+index 184417c..b809dab 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,6 @@
+-# ethquad @ asap7 — F9 given: a WORKING FLAT recipe of the four-MAC
+-# cluster. The task mandates the MAC be implemented once as a reusable
+-# block and instantiated four times.
++# ethquad @ asap7 — HIERARCHICAL recipe: the ethmac module is hardened
++# ONCE as a reusable block (ORFS BLOCKS convention, child config in
++# block.mk) and the top level assembles four placed macros of it.
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NAME            = ethquad
+@@ -10,7 +10,30 @@ export VERILOG_FILES = $(sort $(wildcard $(DESIGN_HOME)/src/ethmac/*.v)) \
+                        $(WS)/src/ethquad/ethquad.v
+ export SDC_FILE      = $(WS)/constraint.sdc
+ 
++# --- Hierarchy: build ethmac once as a hard block -----------------------
++export BLOCKS                ?= ethmac
++# Keep ethmac as a black box (liberty view from ADDITIONAL_LIBS) in the
++# top-level netlist; do not flatten it into the top.
++export SYNTH_HIERARCHICAL     = 1
++export SYNTH_KEEP_MODULES     = ethmac
++
++# --- Top-level floorplan ------------------------------------------------
++# Four ethmac macros (~55% util each) plus top-level glue logic.
+ export CORE_UTILIZATION       = 40
+ export CORE_ASPECT_RATIO      = 1
+ export CORE_MARGIN            = 4
++export PLACE_DENSITY          = 0.60
++
++# Keep the four macros close to the core edges so their pins face the
++# top-level IOs; leaves an open routing channel in the middle.
++export MACRO_PLACEMENT_TCL    = $(WS)/hooks/macro_placement.tcl
++export MACRO_PLACE_HALO       ?= 5 5
++
++# --- Routing ------------------------------------------------------------
++# Macros use up to M5 internally; the top level routes above them.
++export MIN_ROUTING_LAYER      = M2
++export MAX_ROUTING_LAYER      = M9
++export ROUTING_LAYER_ADJUSTMENT = 0.3
++
+ export TNS_END_PERCENT        = 100
++export PLACE_PINS_ARGS        = -annealing
+diff --git a/hooks/macro_placement.tcl b/hooks/macro_placement.tcl
+new file mode 100644
+index 0000000..975780c
+--- /dev/null
++++ b/hooks/macro_placement.tcl
+@@ -0,0 +1,37 @@
++# Manual 2x2 placement of the four ethmac macros in ethquad.
++# Sourced from macro_place_util.tcl (MACRO_PLACEMENT_TCL); when this file
++# places every macro, rtl_macro_placer below becomes a no-op.
++#
++# Geometry is derived from the actual core area and macro dimensions so
++# the file stays correct if the block size changes.  The four macros are
++# pushed towards the four corners (pins face the top-level IO ring),
++# leaving an open cross-shaped routing channel in the middle.
++
++set block [ord::get_db_block]
++set core  [$block getCoreArea]
++set core_llx [ord::dbu_to_microns [$core xMin]]
++set core_lly [ord::dbu_to_microns [$core yMin]]
++set core_urx [ord::dbu_to_microns [$core xMax]]
++set core_ury [ord::dbu_to_microns [$core yMax]]
++
++# Keep the macros this far away from the core boundary (matches the
++# MACRO_PLACE_HALO used for the surrounding placement blockages).
++set halo 5.0
++
++# All four instances share the same master (single hardened ethmac block).
++set master [[$block findInst u_mac0] getMaster]
++set mw [ord::dbu_to_microns [$master getWidth]]
++set mh [ord::dbu_to_microns [$master getHeight]]
++
++set x_left  [expr { $core_llx + $halo }]
++set x_right [expr { $core_urx - $halo - $mw }]
++set y_bot   [expr { $core_lly + $halo }]
++set y_top   [expr { $core_ury - $halo - $mh }]
++
++# u_mac0: bottom-left, u_mac1: bottom-right, u_mac2: top-left, u_mac3: top-right
++place_macro -macro_name u_mac0 -location [list $x_left  $y_bot] -orientation R0
++place_macro -macro_name u_mac1 -location [list $x_right $y_bot] -orientation R0
++place_macro -macro_name u_mac2 -location [list $x_left  $y_top] -orientation R0
++place_macro -macro_name u_mac3 -location [list $x_right $y_top] -orientation R0
++
++puts "ethquad macro_placement: macro ${mw}x${mh}, core \[$core_llx $core_lly $core_urx $core_ury\]"

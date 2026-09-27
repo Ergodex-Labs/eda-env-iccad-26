@@ -1,0 +1,149 @@
+diff --git a/config.mk b/config.mk
+index ebf508f..a589a11 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,9 @@
+-# mpb_soc6 @ asap7 — F4 given: DEGRADED macro-placement recipe.
+-# Dose: hostile utilization is the dose. The flow completes but the layout fails sign-off
+-# (macro crowding -> routing DRCs / timing, per the 036 break class).
++# mpb_soc6 @ asap7 — repaired macro-placement recipe.
++# 16 fakeram7_256x32 (8.36 x 42 um) placed manually in an 8x2 grid via
++# flow/scripts/macro_place.tcl (workspace override). Pin sides of macro
++# column pairs face shared ~8 um vertical channels; a 16.3 um central
++# horizontal channel holds the std-cell fold/mux logic. Core util ~50%.
++
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NAME            = mpb_soc6
+@@ -12,8 +15,17 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram7_256x32.lef
+ export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/NLDM/fakeram7_256x32.lib
+ 
+-export CORE_UTILIZATION       = 80
+-export CORE_ASPECT_RATIO      = 1
+-export CORE_MARGIN            = 2
++# Explicit die/core: 108 x 108 um core -> 5813 um^2 cell area / 11664 um^2
++# core area = ~49.8 % utilization. Core origin 2.16 = LCM of the asap7
++# site (0.054x0.270) and routing-track (0.036/0.048) grids, so macros can
++# be simultaneously row-aligned and M4-pin-track-aligned.
++export DIE_AREA  = 0 0 112.32 112.32
++export CORE_AREA = 2.16 2.16 110.16 110.16
++
+ export MACRO_PLACE_HALO       = 3 3
++# Row-cut halo around macros must cover the placement-blockage halo used
++# in flow/scripts/macro_place.tcl (3 um on pin sides) so tapcell endcaps
++# never land inside a blockage.
++export MACRO_ROWS_HALO_X      = 3
++export MACRO_ROWS_HALO_Y      = 2
+ export TNS_END_PERCENT        = 100
+diff --git a/flow/scripts/macro_place.tcl b/flow/scripts/macro_place.tcl
+new file mode 100644
+index 0000000..2b8769d
+--- /dev/null
++++ b/flow/scripts/macro_place.tcl
+@@ -0,0 +1,105 @@
++# Workspace override of macro_place.tcl for mpb_soc6 @ asap7.
++#
++# Deterministic 8-column x 2-row grid for the 16 fakeram7_256x32 macros
++# (8.36 x 42 um, all 75 pins on the left edge, M4).
++#
++# - Columns are grouped in 4 pairs. In each pair the left macro is MY
++#   (pins on its right edge) and the right macro is R0 (pins on its left
++#   edge), so both pin sides face a shared ~8 um vertical channel.
++# - Rows are separated by a 16.3 um central horizontal channel that hosts
++#   the std-cell xor-fold / read-mux logic, roughly equidistant to all
++#   16 banks (cross-macro timing paths).
++# - Pair pitch 27.0 um = 5 x the 5.4 um PDN strap pitch, so every pin
++#   channel sees the identical power-strap phase.
++#
++# Core: 108 x 108 um at (2.16,2.16) (see config.mk). Utilization ~50%.
++
++source $::env(SCRIPTS_DIR)/load.tcl
++erase_non_stage_variables floorplan
++load_design 2_1_floorplan.odb 2_1_floorplan.sdc
++source_step_tcl PRE MACRO_PLACE
++
++if { [find_macros] != "" } {
++  set macro_w 8.360
++  set macro_h 42.000
++
++  # All origins snapped to the common asap7 grid: x to 0.108 um (site
++  # width 0.054 and M3/M4 via pitch 0.036), y to 2.16 um from the core
++  # origin (2.16,2.16) = LCM(site 0.27, M4 track 0.048). The fakeram M4
++  # pins then land exactly on M4 routing tracks and tapcell row cuts
++  # stay on-grid. Pair pitch 27.0 um = 5 x the M5/M6 PDN strap pitch
++  # (5.4 um), so every 8 um pin channel sees the identical strap phase.
++  set pair_pitch 27.000
++  set pair0_x    3.240
++  set col_b_off  16.308 ;# 8.36 macro + 7.948 um pin channel
++
++  set y_bot 6.48  ;# 2.16 + 2*2.16 (4.32 um bottom margin)
++  set y_top 64.80 ;# 2.16 + 29*2.16 (16.32 um central channel)
++
++  # bank -> {column, row}. Columns 0..7 left to right, row 0 = bottom.
++  # Interleave banks so that physically adjacent macros belong to
++  # different address ranges; keeps the fold/mux wires short on average.
++  set col_of {0 2 4 6 1 3 5 7 0 2 4 6 1 3 5 7}
++  set row_of {0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1}
++
++  for {set b 0} {$b < 16} {incr b} {
++    set col [lindex $col_of $b]
++    set row [lindex $row_of $b]
++    set pair [expr {$col / 2}]
++    set in_pair [expr {$col % 2}]
++    if { $in_pair == 0 } {
++      # left macro of the pair: MY, pins face right into shared channel.
++      # NOTE: for MY the master is mirrored about the origin, so the
++      # bbox extends to the LEFT of the origin; place origin at x+w.
++      set x [expr {$pair0_x + $pair * $pair_pitch}]
++      set orient MY
++      set ox [expr {$x + $macro_w}]
++    } else {
++      # right macro of the pair: R0, pins face left into shared channel
++      set x [expr {$pair0_x + $pair * $pair_pitch + $col_b_off}]
++      set orient R0
++      set ox $x
++    }
++    set y [expr {$row == 0 ? $y_bot : $y_top}]
++    set inst_name [format {g_bank\[%d\].u_mem} $b]
++    set inst [[ord::get_db_block] findInst $inst_name]
++    if { $inst == "NULL" } {
++      puts "Error: macro instance $inst_name not found"
++      exit 1
++    }
++    $inst setOrient $orient
++    $inst setOrigin [ord::microns_to_dbu $ox] [ord::microns_to_dbu $y]
++    $inst setPlacementStatus FIRM
++    puts "Placed $inst_name at ($x, $y) orient $orient"
++
++    # Hard placement blockage halo around the macro so std cells keep
++    # clear of the M4 pins (detail-route pin access). Pin side gets a
++    # 3 um halo (keeps cells ~3 um off the pins in the ~8 um shared pin
++    # channel); other sides get 1 um.
++    set halo_pin 3.0
++    set halo_np  1.0
++    if { $orient eq "MY" } {
++      # pins on the right edge
++      set hl $halo_np ; set hr $halo_pin
++    } else {
++      # R0: pins on the left edge
++      set hl $halo_pin ; set hr $halo_np
++    }
++    set xl [expr {$x - $hl}]
++    set yl [expr {$y - $halo_np}]
++    set xh [expr {$x + $macro_w + $hr}]
++    set yh [expr {$y + $macro_h + $halo_np}]
++    set blk [odb::dbBlockage_create [ord::get_db_block] \
++      [ord::microns_to_dbu $xl] [ord::microns_to_dbu $yl] \
++      [ord::microns_to_dbu $xh] [ord::microns_to_dbu $yh]]
++  }
++} else {
++  puts "No macros found: Skipping macro_placement"
++}
++
++source_step_tcl POST MACRO_PLACE
++
++report_design_area
++
++orfs_write_db $::env(RESULTS_DIR)/2_2_floorplan_macro.odb
++write_macro_placement $::env(RESULTS_DIR)/2_2_floorplan_macro.tcl

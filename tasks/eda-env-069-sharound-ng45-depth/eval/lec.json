@@ -1,0 +1,9 @@
+{
+ "golden": [
+  "shacomp.v"
+ ],
+ "targets": [
+  "src/sharound/shacomp.v"
+ ],
+ "top": "shacomp"
+}

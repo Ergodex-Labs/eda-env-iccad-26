@@ -1,0 +1,134 @@
+diff --git a/config.mk b/config.mk
+index 38de47d..5b331e8 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,7 @@
+-# mpb_soc8 @ asap7 — F4 given: DEGRADED macro-placement recipe.
+-# Dose: pin-constrained: single-edge IO. The flow completes but the layout fails sign-off
+-# (macro crowding -> routing DRCs / timing, per the 036 break class).
++# mpb_soc8 @ asap7 — repaired macro-placement recipe.
++# Fix for the degraded F4 recipe: drop core utilization to ~50% and place the
++# 18 fakeram banks on a deterministic 2x9 grid (hooks/macro_placement.tcl via
++# MACRO_PLACEMENT_TCL) so routing channels stay open and sign-off is clean.
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NAME            = mpb_soc8
+@@ -12,8 +13,12 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram7_256x32.lef
+ export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/NLDM/fakeram7_256x32.lib
+ 
+-export CORE_UTILIZATION       = 80
++export CORE_UTILIZATION       = 50
+ export CORE_ASPECT_RATIO      = 1
+ export CORE_MARGIN            = 2
+ export MACRO_PLACE_HALO       = 3 3
+ export TNS_END_PERCENT        = 100
++
++# Deterministic manual macro grid (sourced by flow/scripts/macro_place.tcl,
++# which skips rtl_macro_placer when this is set).
++export MACRO_PLACEMENT_TCL    = $(WS)/hooks/macro_placement.tcl
+diff --git a/flow/scripts/macro_place.tcl b/flow/scripts/macro_place.tcl
+new file mode 100644
+index 0000000..d3cfc87
+--- /dev/null
++++ b/flow/scripts/macro_place.tcl
+@@ -0,0 +1,20 @@
++source $::env(SCRIPTS_DIR)/load.tcl
++erase_non_stage_variables floorplan
++load_design 2_1_floorplan.odb 2_1_floorplan.sdc
++source_step_tcl PRE MACRO_PLACE
++
++# Use the deterministic manual macro grid (MACRO_PLACEMENT_TCL) instead of
++# rtl_macro_placer, which crowds the 18 RAM banks and starves routing
++# channels on this design.
++if { [env_var_exists_and_non_empty MACRO_PLACEMENT_TCL] } {
++  log_cmd source $::env(MACRO_PLACEMENT_TCL)
++} else {
++  source $::env(SCRIPTS_DIR)/macro_place_util.tcl
++}
++
++source_step_tcl POST MACRO_PLACE
++
++report_design_area
++
++orfs_write_db $::env(RESULTS_DIR)/2_2_floorplan_macro.odb
++write_macro_placement $::env(RESULTS_DIR)/2_2_floorplan_macro.tcl
+diff --git a/hooks/macro_placement.tcl b/hooks/macro_placement.tcl
+new file mode 100644
+index 0000000..d014c8b
+--- /dev/null
++++ b/hooks/macro_placement.tcl
+@@ -0,0 +1,73 @@
++# Manual macro placement for mpb_soc8 (18 x fakeram7_256x32, 8.36 x 42.0 um).
++#
++# The default rtl_macro_placer crowds the 18 RAM banks together at high
++# utilization, starving the routing channels and causing sign-off DRCs.
++# Here we spread the macros in a regular 2 x 9 grid derived from the actual
++# core area: equal vertical channels between columns (pin access: all macro
++# pins live on the left/right edges) and one wide horizontal channel in the
++# middle that holds the (tiny) standard-cell logic.
++
++set block [ord::get_db_block]
++set core [$block getCoreArea]
++
++set core_x0 [ord::dbu_to_microns [$core xMin]]
++set core_y0 [ord::dbu_to_microns [$core yMin]]
++set core_x1 [ord::dbu_to_microns [$core xMax]]
++set core_y1 [ord::dbu_to_microns [$core yMax]]
++
++set core_w [expr {$core_x1 - $core_x0}]
++set core_h [expr {$core_y1 - $core_y0}]
++
++set macro_w 8.360
++set macro_h 42.000
++
++set ncols 9
++set nrows 2
++
++# Equal horizontal gaps: left/right margins + inter-column channels.
++set gap_x [expr {($core_w - $ncols * $macro_w) / ($ncols + 1)}]
++# Vertical: top/bottom margins + one middle channel.
++set gap_y [expr {($core_h - $nrows * $macro_h) / ($nrows + 1)}]
++
++# The fakeram signal pins are 0.024 um M4 slivers whose centers sit exactly
++# on the M4/M5 routing-track grid (pitch 0.048, offset 0.012) when the macro
++# origin is an integer multiple of 0.048 um.  Off-track placement makes the
++# pins unreachable (DRT-0255), so snap every origin to that grid.
++set track_pitch 0.048
++proc snap_track {v} {
++  variable track_pitch
++  return [expr {$track_pitch * floor($v / $track_pitch + 0.5)}]
++}
++
++puts "macro_placement: core ${core_w}x${core_h} gap_x=$gap_x gap_y=$gap_y"
++
++# Collect the bank macros (instance names contain escaped brackets, so match
++# on the index with a regexp instead of hard-coding names).
++set macros {}
++foreach inst [$block getInsts] {
++  set master [$inst getMaster]
++  if {[$master getType] == "BLOCK"} {
++    set name [$inst getName]
++    if {[regexp {g_bank\\\[(\d+)\\\]\.u_mem} $name -> idx]} {
++      lappend macros [list $idx $name]
++    } else {
++      error "Unexpected macro instance $name"
++    }
++  }
++}
++set macros [lsort -integer -index 0 $macros]
++if {[llength $macros] != $ncols * $nrows} {
++  error "Expected [expr {$ncols * $nrows}] macros, found [llength $macros]"
++}
++
++set i 0
++foreach entry $macros {
++  set name [lindex $entry 1]
++  set row [expr {$i / $ncols}]
++  set col [expr {$i % $ncols}]
++  set x [snap_track [expr {$core_x0 + $gap_x + $col * ($macro_w + $gap_x)}]]
++  # Row 0 at the bottom, row 1 at the top.
++  set y [snap_track [expr {$core_y0 + $gap_y + $row * ($macro_h + $gap_y)}]]
++  place_macro -macro_name $name -location [list $x $y] -orientation R0 -exact
++  incr i
++}

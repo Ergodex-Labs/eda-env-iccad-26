@@ -1,0 +1,78 @@
+diff --git a/config.mk b/config.mk
+index 4e1ff47..69478f0 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,6 +1,8 @@
+-# mpb_soc4 @ asap7 — F4 given: DEGRADED macro-placement recipe.
+-# Dose: halo 0.1 + hostile aspect kept. The flow completes but the layout fails sign-off
+-# (macro crowding -> routing DRCs / timing, per the 036 break class).
++# mpb_soc4 @ asap7 — REPAIRED macro-placement recipe.
++# Fix vs. the degraded given: real routing channels around the 20 SRAMs
++# (explicit core geometry ~52% utilization, aspect ~1.4) and a deterministic
++# manual macro grid (2 rows x 5 MY/R0 pairs, pins facing shared channels)
++# instead of halo 0.1 crowding.
+ export PLATFORM               = asap7
+ 
+ export DESIGN_NAME            = mpb_soc4
+@@ -12,8 +14,10 @@ export SDC_FILE      = $(WS)/constraint.sdc
+ export ADDITIONAL_LEFS = $(PLATFORM_DIR)/lef/fakeram7_256x32.lef
+ export ADDITIONAL_LIBS = $(PLATFORM_DIR)/lib/NLDM/fakeram7_256x32.lib
+ 
+-export CORE_UTILIZATION       = 68
+-export CORE_ASPECT_RATIO      = 2
++# Core: 140 x 100 um -> util = 7249 / 14000 ~ 51.8% ("near 50%").
++export DIE_AREA               = 0 0 144 104
++export CORE_AREA              = 2 2 142 102
+ export CORE_MARGIN            = 2
+-export MACRO_PLACE_HALO       = 0.1 0.1
++export MACRO_PLACE_HALO       = 2 2
++export MACRO_PLACEMENT_TCL    = $(WS)/hooks/macro_placement.tcl
+ export TNS_END_PERCENT        = 100
+diff --git a/hooks/macro_placement.tcl b/hooks/macro_placement.tcl
+new file mode 100644
+index 0000000..9186aae
+--- /dev/null
++++ b/hooks/macro_placement.tcl
+@@ -0,0 +1,42 @@
++# Deterministic macro grid for mpb_soc4 (20 x fakeram7_256x32, 8.36 x 42 um).
++# All signal pins sit on the macro's left edge (M4), so macros are paired
++# MY/R0 around a shared 7 um vertical channel that both pin edges face.
++# Grid: 2 rows x 5 pairs.
++#
++# PDN alignment: the asap7 M5 power straps land on edges 2.48 + 5.4*k
++# (centers 2.54 + 5.4*k).  Each pair channel is CENTERED on an M5 strap
++# (centers 18.74 + 27*p; pair pitch 27.0 = 5 * 5.4 keeps every channel on
++# the grid), giving 3.44 um strap-to-macro clearance — outside the 2.0 um
++# PDN macro halo, so the channel straps and their M2-M5 vias survive.
++# The inter-pair gap (3.28 um) contains no M5 strap.
++#
++# Core is 140 x 100 (CORE_AREA 2 2 142 102); margins >= 3.4 um all around.
++
++set macro_w 8.36
++set ch_x    7.0     ;# pin channel inside a pair (M5 strap runs up its center)
++set x0      6.88    ;# x of first MY macro = strap center 18.74 - 3.5 - 8.36
++set y0      7.0     ;# bottom margin inside core
++set ch_y    7.0     ;# horizontal channel between the two rows
++
++set pair_pitch 27.0                  ;# 5 * 5.4 (M5 strap pitch)
++set row_pitch  [expr {42.0 + $ch_y}] ;# 49.0
++
++for {set i 0} {$i < 20} {incr i} {
++    set row [expr {$i / 10}]
++    set col [expr {$i % 10}]
++    set pair [expr {$col / 2}]
++    set x_pair [expr {$x0 + $pair * $pair_pitch}]
++    set y [expr {$y0 + $row * $row_pitch}]
++    if {$col % 2 == 0} {
++        # left member of the pair: mirrored, pins on its right edge
++        set x $x_pair
++        set orient MY
++    } else {
++        # right member of the pair: pins on its left edge
++        set x [expr {$x_pair + $macro_w + $ch_x}]
++        set orient R0
++    }
++    # ODB names keep the Verilog escape backslashes: g_bank\[<i>\].u_mem
++    set name [format {g_bank\[%d\].u_mem} $i]
++    place_macro -macro_name $name -location [list $x $y] -orientation $orient
++}

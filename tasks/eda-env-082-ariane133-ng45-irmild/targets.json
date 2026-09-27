@@ -1,0 +1,38 @@
+{
+  "budget_sec": 14400,
+  "eval_clk_ps": 3.6,
+  "gates": [
+    {
+      "metric": "wns",
+      "op": ">=",
+      "value": 0.0
+    },
+    {
+      "metric": "drc_violations",
+      "op": "<=",
+      "value": 0
+    },
+    {
+      "metric": "instance_count",
+      "op": ">=",
+      "ref": "noop",
+      "scale": 0.8
+    },
+    {
+      "metric": "power_total",
+      "op": "<=",
+      "ref": "noop",
+      "scale": 1.05
+    },
+    {
+      "metric": "ir_drop_v",
+      "op": "<=",
+      "value": 0.0053
+    }
+  ],
+  "reward": {
+    "form": "gate",
+    "scale": 1.0,
+    "units": "pass"
+  }
+}
