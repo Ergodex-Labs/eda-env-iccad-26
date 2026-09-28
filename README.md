@@ -1,45 +1,33 @@
-# EDA-env: ICCAD 2026 research artifacts
+# EDA-env
 
-This repository contains the benchmark artifacts for the ICCAD 2026 paper:
-**Invited: EDA-env: A Reinforcement Learning Environment for RTL-to-GDS Design with Independent Scoring**.
+EDA-env is a benchmark for evaluating agents on chip-design tasks in the RTL-to-GDS flow, from a hardware description to a physical layout.
+This repository contains 85 tasks and a Docker evaluator for scoring an agent's changes to the design files.
+The tasks include completing an implementation flow, repairing a power grid, and improving timing under physical constraints.
+
+You can run your own agent on these tasks or reproduce the supplied final submissions from the paper.
+The evaluator rebuilds each submission and returns measurements, a pass/fail result, and a reward.
+You choose the agent and control how it uses that feedback between attempts.
+
+For ML and EDA researchers building similar environments, the task files specify the allowed edits, design constraints, and reward formulas.
+The evaluator shows how we check those constraints and measure the resulting layout independently of the agent.
+A timing improvement earns a reward only if the design also passes the task's required checks.
+
+This is the artifact release for the ICCAD 2026 paper
+*Invited: EDA-env: A Reinforcement Learning Environment for RTL-to-GDS Design with Independent Scoring*.
 The proceedings citation will be added after publication.
-
-The release provides 85 chip-design tasks, final agent submissions, and tools to run and score submissions in Docker.
-The tasks cover implementation, repair, and power, performance, and area (PPA) optimization.
-RTL-to-GDS is the workflow from a register-transfer-level hardware design to its physical layout.
-
-This release gives ML and EDA researchers a starting point for experiments with agents in that workflow.
-Each task connects an engineering objective to editable design files, constraints, and measurable success criteria.
-The task packages also give concrete examples of task and reward design for further benchmark and reinforcement-learning research.
 
 [Project website](https://frontiereda.com) · [Archived artifacts](https://doi.org/10.5281/zenodo.22990248)
 
-## What you can do
-
-- **Evaluate your own agent.** Give it a task's instructions and starter files, then score its submitted patch or edited workspace.
-- **Replay the paper's submissions.** Rebuild the supplied submissions and compare the measurements and rewards with the reported values.
-- **Study task and reward design.** Inspect how permitted edits, physical constraints, and correctness checks determine the reward.
-
-You supply the agent and its control loop.
-The evaluator rebuilds the submitted design, measures it, and calculates the gate and reward.
-The gate indicates whether the submission meets all required task conditions.
-This release provides execution and scoring tools, but no agent or training loop.
-
-The evaluator runs locally in Docker and requires no external service accounts.
-An agent that uses a hosted model needs its own model access.
-The initial Docker build requires internet access to download tools and dependencies.
-
 ## Start with a supplied submission
 
-Task 019 brings up an elevator controller on SKY130.
-The RTL is fixed.
-The agent completes the implementation configuration under timing, routing, and utilization constraints.
-Start with its supplied submission to check the execution and scoring workflow.
+Task 019 asks the agent to complete the implementation configuration for an elevator controller on SKY130.
+The RTL stays fixed, and the resulting layout must meet the task's timing, routing, and utilization limits.
+Run its supplied submission first to check your installation.
 
 ### 1. Get the repository and tools
 
 Install Git, Docker with Linux amd64 support, and Python 3.10 or later on the host.
-The evaluator uses eight threads and a 16 GB container memory limit.
+Each evaluation container has a limit of eight CPUs and 16 GB of memory.
 Allocate enough memory to Docker for that container.
 Large tasks can take several hours.
 ARM hosts use emulation and can take substantially longer.
@@ -52,6 +40,9 @@ cd eda-env-iccad-26
 Run the commands below from the repository root.
 
 ### 2. Build the image
+
+The build downloads the tools and dependencies, so it needs internet access.
+Evaluation runs locally without external service accounts.
 
 ```sh
 docker build --platform linux/amd64 -t eda-env-evaluator:iccad26 .
@@ -72,29 +63,24 @@ It contains `reward.json`, the measurements, and the flow logs.
 cat evaluation-output/019/reward.json
 ```
 
-A passing task 019 submission receives gate 1 and reward 1.
+A passing task 019 submission receives `gate: 1` and `reward: 1`.
+The gate records whether the submission passes all required checks.
 The [submission index](submissions/index.json) contains the paper's reported values for comparison.
 See [Gate and reward](#gate-and-reward) for failed submissions and infrastructure errors.
 
 ## Evaluate your own agent
 
-1. Read the task's [instructions](tasks/eda-env-019-elevatorfsm-sky130hd-impl/instruction.md) and [package guide](tasks/eda-env-019-elevatorfsm-sky130hd-impl/README.md).
-2. Copy the starter project to a new directory.
-3. Give your agent the instructions and the copied project.
-4. Evaluate the edited project with the command below.
-
-For task 019, copy the starter with:
+Read task 019's [instructions](tasks/eda-env-019-elevatorfsm-sky130hd-impl/instruction.md) and [package guide](tasks/eda-env-019-elevatorfsm-sky130hd-impl/README.md).
+Then copy its starter project to a new directory:
 
 ```sh
 mkdir -p workspaces
 cp -R tasks/eda-env-019-elevatorfsm-sky130hd-impl/project workspaces/019
 ```
 
-Task instructions use `/workspace` as the editable project path inside the task environment.
-For this host-side workflow, give your agent the absolute path to `workspaces/019` as its editable project.
-Your agent can call the evaluator after an attempt and read its output for feedback.
-Choose a new output directory for each attempt.
-The instructions also describe commands for use inside the task container.
+Give your agent the instructions and the absolute path to `workspaces/019`.
+The instructions refer to this project as `/workspace` and include commands for use inside the task container.
+For this example, the agent edits the local copy at `workspaces/019`.
 
 After the agent edits the copied project, run:
 
@@ -104,15 +90,19 @@ python3 evaluator/evaluate.py --task 019 \
   --out evaluation-output/my-submission
 ```
 
-Supply the complete edited project, not only its changed files.
-The evaluator derives a patch against the starter and applies the task's edit rules.
+Supply the complete edited project with `--workspace`.
+The evaluator compares it with the starter to identify edits and check whether they are allowed.
 Missing files in the submitted directory count as deletions.
 Keep the original task package unchanged.
 
-For another task, select its directory under `tasks/` and use its task ID and starter project.
-The evaluator accepts a task ID or a task directory.
-It also accepts a unified patch through `--patch`, as in the supplied-submission example.
-Your agent's submission does not need to match the supplied patch to receive a reward.
+Your agent can read the evaluation output and revise its submission after each attempt.
+Use a new output directory for each attempt.
+This repository does not include an agent or training loop.
+If your agent uses a hosted model, it needs its own model access.
+
+For another task, use its starter project from `tasks/` and pass its ID or directory to `--task`.
+To submit a unified patch instead, use `--patch` as in the first example.
+The evaluator scores any submission that follows the task's edit rules.
 
 ## Contents
 
@@ -121,18 +111,17 @@ Your agent's submission does not need to match the supplied patch to receive a r
 | `tasks/` | Task instructions, starter files, edit rules, thresholds, and evaluation inputs. |
 | `submissions/` | Final agent patches and an index of the reported gates and rewards. |
 | `evaluator/` | Docker runner, measurement scripts, task checks, and reward calculation. |
-| `Dockerfile` | Pinned ORFS tools, required flow patches, and simulation tools. |
+| `Dockerfile` | Pinned OpenROAD-flow-scripts (ORFS) image, flow patches, and simulation tools. |
 | `results/` | Recorded RDF-2024 calibration measurements. |
 
-Task-generation code, qualification pipelines, development probes, regression infrastructure, audit pipelines, and agent trajectories are outside this release.
-Reference RTL and testbenches remain where the task needs them for evaluation.
+The release does not include agent trajectories or the pipelines used to create and qualify tasks.
+Tasks include reference RTL and testbenches where these are needed for evaluation.
 
 ## Gate and reward
 
-The evaluator checks permitted edits before it runs the flow.
-It rebuilds from the starter in a fresh container without network access.
-A separate container measures the final layout under the task's fixed constraints and library views.
-Tasks with RTL checks also run EQY or Icarus Verilog.
+The evaluator checks the submitted edits, applies them to the starter, and rebuilds the design in a fresh container without network access.
+It measures the final layout in a separate container with the task's fixed constraints and library views.
+Depending on the task, EQY checks RTL equivalence or Icarus Verilog runs a simulation testbench.
 
 The 85 tasks use these reward rules:
 
@@ -140,30 +129,28 @@ The 85 tasks use these reward rules:
 - 26 timing tasks: `reward = gate * scale / ECP`.
 - 2 area tasks: `reward = gate * scale / area`.
 
-`targets.json` gives the scale, units, and gate thresholds for each task.
-A gate passes only when every required condition passes.
-Missing required measurements do not pass.
-37 tasks need a starter replay to calculate relative thresholds.
-The evaluator runs that replay automatically.
-No reward calculation requires an oracle solution.
+ECP is the effective clock period.
+Each task's `targets.json` gives the scale, units, and gate thresholds.
+The gate is 1 only if every required condition passes and all required measurements are present.
+For 37 tasks, some thresholds depend on the starter's measurements, so the evaluator also runs the starter automatically.
 
 A rejected submission or failed flow receives gate 0 and reward 0.
 An infrastructure error or failed required starter replay produces `status: error` and no numerical score.
 
 ## Final submissions
 
-`submissions/index.json` maps each evaluated task to its final patch and the paper's reported gate and reward.
-These reported values are comparison data, not inputs to the evaluator.
-The evaluator calculates new results from the submitted files.
+The [submission index](submissions/index.json) lists each task's final patch and its reported gate and reward.
+Use these values to compare a new evaluation with the paper's results.
+The evaluator calculates scores from each new run and does not use the reported values as inputs.
 
 Tasks 034 and 071 have two patch files.
-The original `submission.diff` includes a `runner.sh` convenience wrapper outside the current edit policy.
-Their `replay.diff` omits only that wrapper and preserves every design and flow edit.
-Use `replay.diff` for these two tasks.
-The evaluator invokes the flow directly and does not use `runner.sh`.
-Both original patches remain available with their checksums.
+For these tasks, use `replay.diff` with the evaluator.
+The original `submission.diff` includes a `runner.sh` wrapper that the edit rules do not permit.
+The replay patch removes that wrapper and keeps all design and flow edits.
+The evaluator runs the flow directly, so it does not need the wrapper.
+The original patches and their checksums are also included.
 
 ## License and citation
 
-See `LICENSE`, `NOTICE`, and `CITATION.cff`.
+See [LICENSE](LICENSE), [NOTICE](NOTICE), and [CITATION.cff](CITATION.cff).
 Third-party design sources and models retain their own licenses.
