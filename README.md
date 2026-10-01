@@ -107,6 +107,8 @@ The evaluator also accepts a unified patch through `--patch`, as in the quicksta
 | `Dockerfile` | Pinned OpenROAD-flow-scripts (ORFS) image, flow patches, and simulation tools. |
 | `results/` | Recorded RDF-2024 calibration measurements. |
 
+In task directory names, `3d` means "3-objective": improve timing while meeting power and area limits.
+
 The release does not include agent trajectories or the pipelines used to create and qualify tasks.
 Tasks include reference RTL and testbenches where these are needed for evaluation.
 
